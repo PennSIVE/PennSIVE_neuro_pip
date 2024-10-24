@@ -292,7 +292,7 @@ if (argv$step == "preparation"){
         write.csv(lesion_num_cc,paste0(count.out.dir,"/",p,"_connected_components.csv"))        
     
     }else if(argv$method == 'jordan'){
-        label_result = read.csv(paste0(reg.epi.out.dir,"/lesions_reg_epi_labeled"))
+        label_result = readnii(paste0(reg.epi.out.dir,"/lesions_reg_epi_labeled"))
         lesion_num_jordan = max(label_result)
         write.csv(lesion_num_jordan,paste0(count.out.dir,"/",p,"_jordan.csv"))
     
