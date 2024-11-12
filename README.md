@@ -9,7 +9,7 @@ Neuroimaging processing can be challenging due to the extensive setup required b
 
 ## How to Use the Tools
 ```bash
-git clone https://github.com/Zheng206/PennSIVE_neuro_pip.git
+git clone https://github.com/PennSIVE/PennSIVE_neuro_pip.git
 
 ```
 
