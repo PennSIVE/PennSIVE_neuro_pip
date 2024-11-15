@@ -8,7 +8,7 @@ The lesion_count pipeline provides two options to count the number of lesions pr
 ## Data Structure
 This pipeline requires all neuroimages to be organized in the BIDS format. An example is provided below:
 
-![Data Structure](/pipelines/lesion_count/figure/data_structure.png)
+![Data Structure](/pipelines/lesion_count/figure/dataStructure.png)
 
 ## Pipeline Options
 We offer two modes for the pipeline: individual and batch. If users want to run the pipeline for different participants one at a time, the participant's ID and session ID should be specified. Users can also run the pipeline in batch mode. The participant's ID and session ID can be skipped. Additionally, we provide four types of scenarios for running the pipeline: `local` (running the pipeline locally), `cluster` (running the pipeline on High Performance Computing Cluster), `singularity` (running the pipeline on High Performance Computing Cluster using the Singularity container), and `docker` (running the pipeline locally using the docker container). 
