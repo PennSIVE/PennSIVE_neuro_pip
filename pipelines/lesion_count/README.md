@@ -11,7 +11,7 @@ This pipeline requires all neuroimages to be organized in the BIDS format. An ex
 ![Data Structure](/pipelines/lesion_count/figure/data_structure.png)
 
 ## Pipeline Options
-We offer two modes for the pipeline: individual and batch. If users want to run the pipeline for different participants one at a time, the participant's ID and session ID should be specified. Users can also run the pipeline in batch mode. The participant's ID and session ID can be skipped. Additionally, we provide four types of scenarios for running the pipeline: `local` (running the pipeline locally), `cluster` (running the pipeline on High Performance Computing Cluster), `singularity` (running the pipeline on High Performance Computing Cluster using the Singularity container), and `docker` (running the pipeline locally using the docker container). At present, the docker version is not yet available.
+We offer two modes for the pipeline: individual and batch. If users want to run the pipeline for different participants one at a time, the participant's ID and session ID should be specified. Users can also run the pipeline in batch mode. The participant's ID and session ID can be skipped. Additionally, we provide four types of scenarios for running the pipeline: `local` (running the pipeline locally), `cluster` (running the pipeline on High Performance Computing Cluster), `singularity` (running the pipeline on High Performance Computing Cluster using the Singularity container), and `docker` (running the pipeline locally using the docker container). 
 
 The pipeline allows for three count options: DworCount (set --method dworcount), connected components (set --method cc), or both (default; set --method both). 
 
@@ -25,12 +25,12 @@ Detailed examples are provided below (all in individual mode):
 
 -   `local` 
 ```bash
-bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.sh -m /path/to/project -p sub-001 --ses ses-01 --t1 "*T1w*.nii.gz" --flair "*FLAIR*.nii.gz" -s TRUE --mode individual -c local --toolpath /path/to/PennSIVE_neuro_pip
+bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.sh -m /path/to/project -p sub-001 --ses ses-01 --t1 "*T1w*.nii.gz" --flair "*FLAIR*.nii.gz" -s TRUE --method dworcount --mode individual -c local --toolpath /path/to/PennSIVE_neuro_pip
 ```
 
 -   `cluster`
 ```bash
-bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.sh -m /path/to/project -p sub-001 --ses ses-01 --t1 "*T1w*.nii.gz" --flair "*FLAIR*.nii.gz" -s TRUE --mode individual -c cluster --toolpath /path/to/PennSIVE_neuro_pip
+bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.sh -m /path/to/project -p sub-001 --ses ses-01 --t1 "*T1w*.nii.gz" --flair "*FLAIR*.nii.gz" -s TRUE --method dworcount  --mode individual -c cluster --toolpath /path/to/PennSIVE_neuro_pip
 ```
 
 -   `singularity` 
@@ -38,8 +38,17 @@ bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.s
 singularity pull -F $sin_path docker://pennsive/neuror
 ```
 ```bash
-bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.sh -m /path/to/project -p sub-001 --ses ses-01 --t1 "*T1w*.nii.gz" --flair "*FLAIR*.nii.gz" -s TRUE --mode individual -c singularity --toolpath /path/to/PennSIVE_neuro_pip --sinpath $sin_path
+bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.sh -m /path/to/project -p sub-001 --ses ses-01 --t1 "*T1w*.nii.gz" --flair "*FLAIR*.nii.gz" -s TRUE --method dworcount --mode individual -c singularity --toolpath /path/to/PennSIVE_neuro_pip --sinpath $sin_path
 ```
+
+-   `docker`
+```bash
+docker pull pennsive/neuror
+```
+```bash
+bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.sh -m /path/to/project -p sub-001 --ses ses-01 --t1 "*T1w*.nii.gz" --flair "*FLAIR*.nii.gz" -s TRUE --method dworcount --mode individual -c docker --toolpath /path/to/PennSIVE_neuro_pip 
+```
+
 
 **Note**: If you are using the `takim` cluster within the PennSIVE group, you do not need to specify `sinpath`, which has been given a default path.
 
@@ -61,6 +70,10 @@ bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.s
 bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.sh -m /path/to/project -p sub-001 --ses ses-01 --step count --method dworcount --mode individual -c singularity --toolpath /path/to/PennSIVE_neuro_pip --sinpath $sin_path
 ```
 
+-   `docker`
+```bash
+bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.sh -m /path/to/project -p sub-001 --ses ses-01 --step count --method dworcount --mode individual -c docker --toolpath /path/to/PennSIVE_neuro_pip 
+```
 
 ### Consolidation
 
@@ -74,7 +87,4 @@ bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.s
 bash /path/to/PennSIVE_neuro_pip/pipelines/lesion_count/code/bash/lesion_count.sh -m /path/to/project --step consolidation --method dworcount -c cluster --toolpath /path/to/PennSIVE_neuro_pip
 ```
 
-
-## Output Data Structure
-![Output](/pipelines/lesion_count/figure/output.png)
 

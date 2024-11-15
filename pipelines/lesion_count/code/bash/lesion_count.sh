@@ -17,7 +17,7 @@ show_help() {
   echo "  --mimosa   Specify whether to run mimosa segmentation step. Default is TRUE"
   echo "  --threshold   Specify the threshold used to generate mimosa mask. Default is 0.2"
   echo "  --step   Specify the step of pipeline. preparation, count, or consolidation. Default is preparation"
-  echo "  --method   Specify the method of lesion counting. cc, jordan, or both. Default is both"
+  echo "  --method   Specify the method of lesion counting. cc, dworcount, or both. Default is both"
   echo "  --mode   Specify whether to run the pipeline individually or in a batch: individual or batch. Default is batch"
   echo "  -c, --container   Specify the container to use: singularity, docker, local, cluster. Default is cluster"
   echo "  --sinpath   Specify the path to the singularity image if a singularity container is used. A default path is provided: /project/singularity_images/neuror_latest.sif"
@@ -150,9 +150,10 @@ fi
 mkdir -p $main_path/log/output
 mkdir -p $main_path/log/error
 
+
 if [ "$step" == "preparation" ]; then
   if [ -z "$t1" ]; then
-    echo "Error: T1 not specified."
+    echo "Error: T1 MPRAGE not specified."
     show_help
     exit 1
   fi
@@ -164,10 +165,11 @@ if [ "$step" == "preparation" ]; then
   fi
 
   if [ "$mode" == "batch" ]; then
-    
-    patient=`ls $main_path/data`
 
-    for p in $patient;
+    participant=`ls $main_path/data`
+
+    # Lesion Count Pipeline
+    for p in $participant;
     do 
         ses=`ls $main_path/data/$p`
         for s in $ses;
@@ -179,35 +181,36 @@ if [ "$step" == "preparation" ]; then
             Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
             --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
-            --step $step --method $method --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
+            --step $step --method $method --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
           elif [ "$c" == "local" ]; then
             Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
             --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
-            --step $step --method $method --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions > $main_path/log/output/lesion_count_output_${p}_${s}.log 2> $main_path/log/error/lesion_count_error_${p}_${s}.log
+            --step $step --method $method --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions > $main_path/log/output/lesion_count_output_${p}_${s}.log 2> $main_path/log/error/lesion_count_error_${p}_${s}.log
           elif [ "$c" == "singularity" ]; then
             module load singularity
             bsub -J "lesion_count" -oo $main_path/log/output/lesion_count_output_${p}_${s}.log -eo $main_path/log/error/lesion_count_error_${p}_${s}.log singularity run --cleanenv \
-               -B $main_path \
-               -B $tool_path \
-               -B /scratch $sin_path \
-               Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
-               --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-               --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
-               --step $step --method $method --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
+                -B $main_path \
+                -B $tool_path \
+                -B /scratch $sin_path \
+                Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
+                    --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
+                    --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
+                    --step $step --method $method --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
           elif [ "$c" == "docker" ]; then
             docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/lesion_count/code/R/lesion_count.R --mainpath /home/main \
-            --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-            --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
-            --step $step --method $method --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --helpfunc /home/tool/help_functions > /home/main/log/output/lesion_count_output_${p}_${s}.log 2> /home/main/log/error/lesion_count_error_${p}_${s}.log
+                    --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
+                    --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
+                    --step $step --method $method --lesioncenter $tool_path/lesioncenter --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions > /home/main/log/output/lesion_count_output_${p}_${s}.log 2> /home/main/log/error/lesion_count_error_${p}_${s}.log
           fi
         done
     done
+
   elif [ "$mode" == "individual" ]; then
     if [ -z "$p" ]; then
-      echo "Error: Participant id not provided for individual processing."
-      show_help
-      exit 1
+        echo "Error: Participant id not provided for individual processing."
+        show_help
+        exit 1
     fi
 
     if [ -z "$ses" ]; then
@@ -218,54 +221,126 @@ if [ "$step" == "preparation" ]; then
 
     t1_r=`find $main_path/data/$p/$ses/anat -name $t1 -type f | xargs -I {} basename {}`
     flair_r=`find $main_path/data/$p/$ses/anat -name $flair -type f | xargs -I {} basename {}`
+    
     if [ "$c" == "cluster" ]; then
-            bsub -oo $main_path/log/output/lesion_count_output_${p}_${ses}.log -eo $main_path/log/error/lesion_count_error_${p}_${ses}.log \
+      bsub -oo $main_path/log/output/lesion_count_output_${p}_${ses}.log -eo $main_path/log/error/lesion_count_error_${p}_${ses}.log \
+      Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
+      --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
+      --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
+      --step $step --method $method --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
+    elif [ "$c" == "local" ]; then
             Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
             --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
-            --step $step --method $method --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
-          elif [ "$c" == "local" ]; then
-            Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
-            --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-            --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
-            --step $step --method $method --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions > $main_path/log/output/lesion_count_output_${p}_${ses}.log 2> $main_path/log/error/lesion_count_error_${p}_${ses}.log
-          elif [ "$c" == "singularity" ]; then
-            module load singularity
-            bsub -J "lesion_count" -oo $main_path/log/output/lesion_count_output_${p}_${ses}.log -eo $main_path/log/error/lesion_count_error_${p}_${ses}.log singularity run --cleanenv \
-               -B $main_path \
-               -B $tool_path \
-               -B /scratch $sin_path \
-               Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
-               --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-               --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
-               --step $step --method $method --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
-          elif [ "$c" == "docker" ]; then
-            docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/lesion_count/code/R/lesion_count.R --mainpath /home/main \
-            --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-            --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
-            --step $step --method $method --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --helpfunc /home/tool/help_functions > /home/main/log/output/lesion_count_output_${p}_${ses}.log 2> /home/main/log/error/lesion_count_error_${p}_${ses}.log
-          fi
+            --step $step --method $method --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions > $main_path/log/output/lesion_count_output_${p}_${ses}.log 2> $main_path/log/error/lesion_count_error_${p}_${ses}.log
+    elif [ "$c" == "singularity" ]; then
+      module load singularity
+      bsub -J "lesion_count" -oo $main_path/log/output/lesion_count_output_${p}_${ses}.log -eo $main_path/log/error/lesion_count_error_${p}_${ses}.log singularity run --cleanenv \
+          -B $main_path \
+          -B $tool_path \
+          -B /scratch $sin_path \
+          Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
+              --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
+              --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
+              --step $step --method $method --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
+    elif [ "$c" == "docker" ]; then
+        docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/lesion_count/code/R/lesion_count.R --mainpath /home/main \
+                    --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
+                    --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
+                    --step $step --method $method --lesioncenter $tool_path/lesioncenter --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions > /home/main/log/output/lesion_count_output_${p}_${ses}.log 2> /home/main/log/error/lesion_count_error_${p}_${ses}.log
+    fi
 
   fi
-  
-fi 
 
-if [ "$step" == "count" | "$step" == "consolidation" ]; then
+elif [ "$step" == "count" ]; then
+  if [ "$mode" == "batch" ]; then
+
+      participant=`ls $main_path/data`
+
+      # Lesion Count Pipeline
+      for p in $participant;
+      do 
+          ses=`ls $main_path/data/$p`
+          for s in $ses;
+          do
+            if [ "$c" == "cluster" ]; then
+              bsub -oo $main_path/log/output/lesion_count_output_count_${p}_${s}.log -eo $main_path/log/error/lesion_count_error_count_${p}_${s}.log \
+              Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
+              --participant $p --session $s --step $step --method $method 
+            elif [ "$c" == "local" ]; then
+              Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
+              --participant $p --session $s --step $step --method $method > $main_path/log/output/lesion_count_output_count_${p}_${s}.log 2> $main_path/log/error/lesion_count_error_count_${p}_${s}.log
+            elif [ "$c" == "singularity" ]; then
+              module load singularity
+              bsub -J "lesion_count" -oo $main_path/log/output/lesion_count_output_count_${p}_${s}.log -eo $main_path/log/error/lesion_count_error_count_${p}_${s}.log singularity run --cleanenv \
+                  -B $main_path \
+                  -B $tool_path \
+                  -B /scratch $sin_path \
+                  Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
+                      --participant $p --session $s --step $step --method $method
+            elif [ "$c" == "docker" ]; then
+              docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/lesion_count/code/R/lesion_count.R --mainpath /home/main \
+                      --participant $p --session $s --step $step --method $method > /home/main/log/output/lesion_count_output_count_${p}_${s}.log 2> /home/main/log/error/lesion_count_error_count_${p}_${s}.log
+            fi
+          done
+      done
+
+  elif [ "$mode" == "individual" ]; then
+    if [ -z "$p" ]; then
+        echo "Error: Participant id not provided for individual processing."
+        show_help
+        exit 1
+    fi
+
+    if [ -z "$ses" ]; then
+      echo "Error: Session id not provided for individual processing."
+      show_help
+      exit 1
+    fi
+
+    
+    if [ "$c" == "cluster" ]; then
+      bsub -oo $main_path/log/output/lesion_count_output_count_${p}_${ses}.log -eo $main_path/log/error/lesion_count_error_count_${p}_${ses}.log \
+      Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
+      --participant $p --session $ses --step $step --method $method 
+    elif [ "$c" == "local" ]; then
+            Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
+            --participant $p --session $ses --step $step --method $method > $main_path/log/output/lesion_count_output_count_${p}_${ses}.log 2> $main_path/log/error/lesion_count_error_count_${p}_${ses}.log
+    elif [ "$c" == "singularity" ]; then
+      module load singularity
+      bsub -J "lesion_count" -oo $main_path/log/output/lesion_count_output_count_${p}_${ses}.log -eo $main_path/log/error/lesion_count_error_count_${p}_${ses}.log singularity run --cleanenv \
+          -B $main_path \
+          -B $tool_path \
+          -B /scratch $sin_path \
+          Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
+              --participant $p --session $ses --step $step --method $method 
+    elif [ "$c" == "docker" ]; then
+        docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/lesion_count/code/R/lesion_count.R --mainpath /home/main \
+                    --participant $p --session $ses --step $step --method $method > /home/main/log/output/lesion_count_output_count_${p}_${ses}.log 2> /home/main/log/error/lesion_count_error_count_${p}_${ses}.log
+    fi
+
+  fi
+
+
+elif [ "$step" == "consolidation" ]; then
   if [ "$c" == "cluster" ]; then
-    bsub -oo $main_path/log/output/lesion_count_output_consolidation.log -eo $main_path/log/error/lesion_count_error_consolidation.log \
-    Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path --step $step --method $method
+    bsub -oo $main_path/log/output/lesion_count_output_consolidation_${p}_${s}.log -eo $main_path/log/error/lesion_count_error_consolidation_${p}_${s}.log \
+    Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path --step $step --method $method 
   elif [ "$c" == "local" ]; then
-    Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path --step $step --method $method > $main_path/log/output/lesion_count_output_consolidation.log 2> $main_path/log/error/lesion_count_error_consolidation.log
+    Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
+    --step $step --method $method > $main_path/log/output/lesion_count_output_consolidation_${p}_${s}.log 2> $main_path/log/error/lesion_count_error_consolidation_${p}_${s}.log
   elif [ "$c" == "singularity" ]; then
     module load singularity
-    bsub -J "lesion_count" -oo $main_path/log/output/lesion_count_output_consolidation.log -eo $main_path/log/error/lesion_count_error_consolidation.log singularity run --cleanenv \
-       -B $main_path \
-       -B $tool_path \
-       -B /scratch $sin_path \
-       Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path --step $step --method $method
+    bsub -J "lesion_count" -oo $main_path/log/output/lesion_count_output_consolidation_${p}_${s}.log -eo $main_path/log/error/lesion_count_error_consolidation_${p}_${s}.log singularity run --cleanenv \
+        -B $main_path \
+        -B $tool_path \
+        -B /scratch $sin_path \
+        Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path --step $step --method $method
   elif [ "$c" == "docker" ]; then
-    docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path --step $step --method $method > /home/main/log/output/lesion_count_output_consolidation.log 2> /home/main/log/error/lesion_count_error_consolidation.log
+    docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/lesion_count/code/R/lesion_count.R --mainpath /home/main \
+            --step $step --method $method > /home/main/log/output/lesion_count_output_consolidation_${p}_${s}.log 2> /home/main/log/error/lesion_count_error_consolidation_${p}_${s}.log
   fi
+
 fi
-  
+
 
