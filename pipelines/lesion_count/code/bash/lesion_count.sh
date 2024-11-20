@@ -174,8 +174,8 @@ if [ "$step" == "preparation" ]; then
         ses=`ls $main_path/data/$p`
         for s in $ses;
         do
-          t1_r=`find $main_path/data/$p/$s/anat -name $t1 -type f | xargs -I {} basename {}`
-          flair_r=`find $main_path/data/$p/$s/anat -name $flair -type f | xargs -I {} basename {}`
+          t1_r=`find $main_path/data/$p/$s/anat -name $t1 \( -type f -o -type l \) | xargs -I {} basename {}`
+          flair_r=`find $main_path/data/$p/$s/anat -name $flair \( -type f -o -type l \) | xargs -I {} basename {}`
           if [ "$c" == "cluster" ]; then
             bsub -oo $main_path/log/output/lesion_count_output_${p}_${s}.log -eo $main_path/log/error/lesion_count_error_${p}_${s}.log \
             Rscript $tool_path/pipelines/lesion_count/code/R/lesion_count.R --mainpath $main_path \
@@ -219,8 +219,8 @@ if [ "$step" == "preparation" ]; then
       exit 1
     fi
 
-    t1_r=`find $main_path/data/$p/$ses/anat -name $t1 -type f | xargs -I {} basename {}`
-    flair_r=`find $main_path/data/$p/$ses/anat -name $flair -type f | xargs -I {} basename {}`
+    t1_r=`find $main_path/data/$p/$ses/anat -name $t1 \( -type f -o -type l \) | xargs -I {} basename {}`
+    flair_r=`find $main_path/data/$p/$ses/anat -name $flair \( -type f -o -type l \) | xargs -I {} basename {}`
     
     if [ "$c" == "cluster" ]; then
       bsub -oo $main_path/log/output/lesion_count_output_${p}_${ses}.log -eo $main_path/log/error/lesion_count_error_${p}_${ses}.log \
