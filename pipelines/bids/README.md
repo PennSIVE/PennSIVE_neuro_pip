@@ -20,14 +20,13 @@ Detailed examples are provided below (all in individual mode):
 
 ```bash
 bash /path/to/PennSIVE_neuro_pip/pipelines/bids/code/bash/bids_curation.sh -m /path/to/project -p sub-001 -s ses-01 --mode individual -c singularity --toolpath /path/to/PennSIVE_neuro_pip
-
-bash /home/ehorwath/projects/PennSIVE_neuro_pip/pipelines/bids/code/bash/bids_curation.sh -m /home/ehorwath/projects/quy_data -p sub-001 -s ses-01 --mode individual -c singularity --toolpath /home/ehorwath/projects/PennSIVE_neuro_pip
 ```
 **Note**: If you are using the `takim` cluster within the PennSIVE group, you do not need to specify `sinpath`, which has been given a default path. Otherwise, you will need to pull the below Singularity image before running the above command.
 
 ```bash
 singularity pull -F $sin_path docker://nipy/heudiconv
 ```
+<br>
 
 -   `docker`
 
@@ -70,6 +69,7 @@ bash /path/to/PennSIVE_neuro_pip/pipelines/bids/code/bash/bids_curation.sh -m /p
 ```bash
 singularity pull -F $sin_path docker://nipy/heudiconv
 ```
+<br>
 
 -   `docker`
 
