@@ -1,6 +1,6 @@
 # BIDS Pipeline
 
-The BIDS pipeline converts DICOM images to NIfTI and organizes the files in BIDS format. It uses the [heudiconv](https://heudiconv.readthedocs.io/en/latest/) DICOM converter and an RShiny app for heuristic customization.
+The BIDS pipeline converts DICOM images to NIfTI and organizes the files in [BIDS format](https://bids.neuroimaging.io/). It uses the [heudiconv](https://heudiconv.readthedocs.io/en/latest/) DICOM converter and an RShiny app for heuristic customization.
 
 ## Data Structure
 This pipeline requires all DICOMs to be in a folder called 'original_data' within the main data directory. An example is provided below:
