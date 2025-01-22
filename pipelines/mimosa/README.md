@@ -2,6 +2,8 @@
 
 The MIMoSA pipeline integrates an automated technique for white matter lesion segmentation, developed by [Dr. Valcarcel](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6030441/). It provides processed T1-weighted and T2-FLAIR images, as well as a white matter lesion mask. (The current pipeline uses a pre-trained MIMoSA model, which was trained using 3T T1-weighted and T2-FLAIR images as the input)
 
+Note: An older version of this pipeline is also available as a [BIDS app](https://github.com/PennSIVE/mimosa) on [docker hub](https://hub.docker.com/r/pennsive/mimosa). For instructions on using that version of the pipeline, see our [PennSIVE wiki](http://localhost:5869/pipelines.html#mimosa).
+
 ## Diagram
 ![MIMoSA Workflow](/pipelines/mimosa/figure/mimosa_pipeline.png)
 

@@ -2,6 +2,8 @@
 
 The CVS pipeline integrates an automated technique for the detection of the central vein sign in white matter lesions, developed by [Dr. Dworkin](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6177309/). It provides processed T1-weighted, T2-FLAIR, and T2*-EPI images, as well as subject-level CVS probabilities.
 
+Note: An older version of this pipeline is also available as a [BIDS app](https://github.com/PennSIVE/cvs-bids-app) on [docker hub](https://hub.docker.com/r/pennsive/cvs). For instructions on using that version of the pipeline, see our [PennSIVE wiki](http://localhost:5869/pipelines.html#cvs).
+
 ## Diagram
 ![CVS Workflow](/pipelines/cvs/figure/cvs_pipeline.png)
 

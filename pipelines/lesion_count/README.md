@@ -2,6 +2,8 @@
 
 The lesion_count pipeline provides two options to count the number of lesions present in MRI images using the "DworCount" method, developed by [Dr. Jordan Dworkin](https://www.ajnr.org/content/early/2018/02/22/ajnr.A5556) and the connected components method.
 
+Note: An older version of this pipeline is also available as a [BIDS app](https://github.com/PennSIVE/lesiontools) on [docker hub](https://hub.docker.com/r/pennsive/lesionclusters). For instructions on using that version of the pipeline, see our [PennSIVE wiki](https://pennsive.github.io/pipelines.html#center-detection).
+
 ## Diagram
 ![Lesion Count Workflow](/pipelines/lesion_count/figure/lesion_count_pipeline.png)
 
