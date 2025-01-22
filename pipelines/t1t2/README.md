@@ -1,6 +1,6 @@
 # T1/T2 Pipeline
 
-The T1T2 pipeline generates the ratio of T1-weighted to T2-weighted signal intensity (T1/T2). The T2 sequence can be specified as a T2-weighted or FLAIR (default) image.
+The T1T2 pipeline generates the ratio of T1-weighted to T2-weighted signal intensity (T1/T2), developed by [Abigail Manning](https://pubmed.ncbi.nlm.nih.gov/36715449/). The T2 sequence can be specified as a T2-weighted or FLAIR (default) image.
 
 ## Diagram
 ![T1/T2 Workflow](/pipelines/t1t2/figure/t1t2_pipeline.png)
