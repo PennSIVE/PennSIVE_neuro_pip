@@ -168,7 +168,7 @@ if [ "$mode" == "batch" ]; then
           --registration $registration --whitestripe $whitestripe --threshold $threshold \
           --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData > $main_path/log/output/mimosa_output_${p}_${s}.log 2> $main_path/log/error/mimosa_error_${p}_${s}.log
         elif [ "$c" == "singularity" ]; then
-          module load apptainer
+          module load singularity
           bsub -J "mimosa" -oo $main_path/log/output/mimosa_output_${p}_${s}.log -eo $main_path/log/error/mimosa_error_${p}_${s}.log singularity run --cleanenv \
                -B $main_path \
                -B $tool_path \
@@ -214,7 +214,7 @@ elif [ "$mode" == "individual" ]; then
           --registration $registration --whitestripe $whitestripe --threshold $threshold \
           --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData > $main_path/log/output/mimosa_output_${p}_${ses}.log 2> $main_path/log/error/mimosa_error_${p}_${ses}.log
   elif [ "$c" == "singularity" ]; then
-    module load apptainer
+    module load singularity
     bsub -J "mimosa" -oo $main_path/log/output/mimosa_output_${p}_${ses}.log -eo $main_path/log/error/mimosa_error_${p}_${ses}.log singularity run --cleanenv \
          -B $main_path \
          -B $tool_path \
