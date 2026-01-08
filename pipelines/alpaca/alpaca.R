@@ -1,0 +1,143 @@
+suppressMessages(library(argparser))
+suppressMessages(library(neurobase))
+suppressMessages(library(ALPaCA))
+suppressMessages(library(extrantsr))
+suppressMessages(library(WhiteStripe))
+suppressMessages(library(fslr))
+suppressMessages(library(ANTsR))
+suppressMessages(library(ANTsRCore))
+suppressMessages(library(mimosa))
+suppressMessages(library(torch))
+suppressMessages(library(purrr))
+
+p <- arg_parser("Running ALPaCA pipeline to assess the CVS, PRLs, and lesions.", hide.opts = FALSE)
+p <- add_argument(p, "--mainpath", short = '-m', help = "Specify the main path where MRI images can be found.")
+p <- add_argument(p, "--participant", short = '-p', help = "Specify the subject id.")
+p <- add_argument(p, "--session", short = '-s', help = "Specify the session id.")
+p <- add_argument(p, "--t1", help = "Specify the T1 sequence name.")
+p <- add_argument(p, "--flair", help = "Specify the FLAIR sequence name.")
+p <- add_argument(p, "--epi_mag", help = "Specify the EPI sequence magnitude image name.")
+p <- add_argument(p, "--epi_phase", help = "Specify the EPI sequence unwrapped phase image name.")
+p <- add_argument(p, "--n4", help = "Specify whether to run bias correction step.", default = TRUE)
+p <- add_argument(p, "--skullstripping", short = '-s', help = "Specify whether to run skull stripping step.", default = TRUE)
+p <- add_argument(p, "--lesioncenter", help = "Provide the path to the lesioncenter package.")
+p <- add_argument(p, "--hdbetpath", help = "Specify the path to the HD-BET binary", default = "~/.local/bin/hd-bet")
+p <- add_argument(p, "--helpfunc", help = "Specify the path to the help functions.")
+argv <- parse_args(p)
+
+# Read in Files
+main_path = argv$mainpath
+
+# Load lesion center package
+  my_path = paste0(argv$lesioncenter, "/")
+  source_files = list.files(my_path)
+
+# Read and check inputs
+  purrr::map(paste0(my_path, source_files), source)
+  p = argv$participant
+  ses = argv$session
+  anat.path<-paste0(main_path, "/data/", p,  "/", ses, "/anat/")
+  message('Checking inputs...')
+  if(is.na(argv$t1)) stop("Missing T1 sequence!")else{
+    t1 = readnii(paste0(anat.path, argv$t1))
+  }
+  if(is.na(argv$flair)) stop("Missing FLAIR sequence!")else{
+    flair = readnii(paste0(anat.path, argv$flair))
+  }
+
+  if(is.na(argv$epi_mag)) stop("Missing EPI magnitude image!")else{
+    epi_map = read_rpi(paste0(anat.path, argv$epi_mag))
+  }
+  if(is.na(argv$epi_phase)) stop("Missing EPI phase image!")else{
+    epi_phase = read_rpi(paste0(anat.path, argv$epi_phase))
+  }
+
+# Specify output directory
+outdir = paste0(main_path, "/data/", p,  "/", ses, "/alpaca")
+
+## Function to run HD-BET from R
+
+hdbet_path = argv$hdbetpath
+hdbet <- function(img,
+                  mask = NULL,
+                  device = NULL,
+                  cleanup = TRUE,
+                  verbose = FALSE,
+                  hdbet_bin = hdbet_path) {
+  hdbet_bin <- path.expand(hdbet_bin)
+  img_file <- neurobase::checkimg(img)
+  if (!file.exists(hdbet_bin)) {
+    stop(
+      "Cannot find hd-bet executable at: ", hdbet_bin, "\n",
+      "Either install hd-bet there, or pass `hdbet_bin` with the correct path."
+    )
+  }
+  out_base <- tempfile()
+  out_file <- paste0(out_base, ".nii.gz")
+  mask_base <- if (!is.null(mask)) tempfile() else NULL
+  mask_file <- if (!is.null(mask)) paste0(mask_base, ".nii.gz") else NULL
+  cmd <- paste(
+    shQuote(hdbet_bin),
+    "-i", shQuote(img_file),
+    "-o", shQuote(out_file),
+    if (!is.null(mask)) paste("-m", shQuote(mask_file)) else "",
+    if (!is.null(device)) paste("-device", shQuote(device),"--disable_tta") else ""
+  )
+  if (verbose) message(cmd)
+  status <- system(cmd)
+  if (status != 0) stop("HD-BET failed (exit status ", status, ")")
+  brain <- oro.nifti::readNIfTI(out_base, reorient = FALSE)
+  if (is.null(mask)) {
+    if (cleanup) unlink(out_file)
+    return(brain)
+  }
+  brain_mask <- oro.nifti::readNIfTI(mask_base, reorient = FALSE)
+  if (cleanup) unlink(c(out_file, mask_file))
+  list(brain = brain, mask = brain_mask)
+}
+
+
+bias.out.dir = paste0(main_path, "/data/", p,  "/", ses, "/bias_correction")
+dir.create(bias.out.dir,showWarnings = FALSE)
+t1_biascorrect = bias_correct(file = t1,
+                                 correction = "N4",
+                                 verbose = TRUE)
+writenii(t1_biascorrect,paste0(bias.out.dir,"/T1_n4.nii.gz"))
+
+# Skull Stripping
+brain.out.dir = paste0(main_path, "/data/", p,  "/", ses, "/t1_brain")
+dir.create(brain.out.dir,showWarnings = FALSE)
+
+  if(!argv$skullstripping){
+    brain_paths = list.files(brain.out.dir, recursive = TRUE, full.names = TRUE)
+    brain_mask_path = brain_paths[which(grepl("*brainmask.nii.gz$", brain_paths))]
+    brain_mask = readnii(brain_mask_path)
+    t1_fslbet_robust = t1_biascorrect * brain_mask
+    writenii(t1_fslbet_robust, paste0(bias.out.dir,"/T1_brain_n4.nii.gz"))
+    }
+
+  if (argv$skullstripping){
+    dir.create(brain.out.dir,showWarnings = FALSE)
+    hdbet_stripped<-hdbet(t1_biascorrect,device="cpu",hdbet_bin = hdbet_path)
+    brain_mask = hdbet_stripped > 0 
+    writenii(hdbet_stripped,paste0(bias.out.dir,"/T1_brain_n4.nii.gz"))
+    writenii(brain_mask,paste0(brain.out.dir,"/T1_brainmask.nii.gz"))
+  }
+
+preprocess_images(
+  t1_path = paste0(anat.path, argv$t1),
+  flair_path = paste0(anat.path, argv$flair),
+  epi_path = paste0(anat.path, argv$epi_mag),
+  phase_path = paste0(anat.path, argv$epi_phase),
+  output_dir = outdir
+)
+
+make_predictions(
+t1 = file.path(outdir,"t1_final.nii.gz"),
+flair = file.path(outdir,"flair_final.nii.gz"),
+epi = file.path(outdir,"epi_final.nii.gz"),
+phase = file.path(outdir,"phase_final.nii.gz"),
+labeled_candidates = file.path(outdir,"labeled_candidates.nii.gz"),
+eroded_candidates = file.path(outdir,"eroded_candidates.nii.gz"),
+output_dir = outdir
+)
