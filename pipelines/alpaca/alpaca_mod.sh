@@ -18,6 +18,7 @@ show_help() {
   echo "  -w, --whitestripe   Specify whether to run whitestripe step. Default is TRUE"
   echo "  --mimosa   Specify whether to run mimosa segmentation step. Default is TRUE"
   echo "  --threshold   Specify the threshold used to generate mimosa mask. Default is 0.05"
+  echo "  --step   Specify the step of pipeline. estimation or consolidation. Default is estimation"
   echo "  --mode   Specify whether to run the pipeline individually or in a batch: individual or batch. Default is batch"
   echo "  -c, --container   Specify the container to use: singularity, docker, local, cluster. Default is cluster"
   echo "  --sinpath   Specify the path to the singularity image if a singularity container is used. A default path is provided: /project/singularity_images/pennsive_amd64_cputorch.sif"
@@ -46,6 +47,7 @@ registration=TRUE
 whitestripe=TRUE
 mimosa=TRUE
 threshold=0.05
+step=estimation
 mode=batch
 c=cluster
 sin_path="/project/singularity_images/pennsive_amd64_cputorch.sif"
@@ -112,6 +114,10 @@ while [ $# -gt 0 ]; do
       shift
       threshold=$1
       ;;
+    --step)
+      shift
+      step=$1
+      ;;
     --mode)
       shift
       mode=$1
@@ -155,6 +161,9 @@ fi
 mkdir -p $main_path/log/output
 mkdir -p $main_path/log/error
 
+
+if [ "$step" == "estimation" ]; then
+
   if [ -z "$t1" ]; then
     echo "Error: T1 MPRAGE not specified."
     show_help
@@ -182,7 +191,6 @@ mkdir -p $main_path/log/error
     
     patient=`ls $main_path/data`
 
-    # CVS Pipeline
     for p in $patient;
     do 
         ses=`ls $main_path/data/$p`
@@ -259,5 +267,30 @@ mkdir -p $main_path/log/error
             --hdbetpath $hdbet_path --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions > /home/main/log/output/alpaca_output_${p}_${ses}.log 2> /home/main/log/error/alpaca_error_${p}_${ses}.log
           fi
   fi
+
+fi 
+
+if [ "$step" == "consolidation" ]; then
+    if [ "$c" == "cluster" ]; then
+                  echo "Error: ALPaCA is only available as a container."
+                  show_help
+                  exit 1          
+    elif [ "$c" == "local" ]; then
+                  echo "Error: ALPaCA is only available as a container."
+                  show_help
+                  exit 1   
+    elif [ "$c" == "singularity" ]; then
+      module load singularity
+      bsub -J "cvs" -oo $main_path/log/output/alpaca_output_consolidation.log -eo $main_path/log/error/alpaca_error_consolidation.log singularity run --cleanenv \
+       -B $main_path \
+       -B $tool_path \
+       -B /scratch $sin_path \
+       Rscript $tool_path/pipelines/alpaca/alpaca_mod.R  --mainpath $main_path --step $step
+    elif [ "$c" == "docker" ]; then
+      docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript $tool_path/pipelines/alpaca/alpaca_mod.R --mainpath $main_path --step $step > /home/main/log/output/alpaca_output_consolidation.log 2> /home/main/log/error/alpaca_error_consolidation.log
+    fi
+fi
+  
+
 
 
