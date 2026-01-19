@@ -105,6 +105,8 @@ if (argv$step == "estimation"){
     list(brain = brain, mask = brain_mask)
   }
 
+
+  message('Loading inputs...')
   t1_path = paste0(anat.path, argv$t1)
   flair_path = paste0(anat.path, argv$flair)
   epi_path = paste0(anat.path, argv$epi_mag)
@@ -117,6 +119,7 @@ if (argv$step == "estimation"){
   phase <- oro2ants(read_rpi(phase_path, verbose = verbose))
 
   # Bias Correction
+  message('Bias correction...')
   bias.out.dir = paste0(main_path, "/data/", p, "/", ses, "/bias_correction")
   if(argv$n4){
     dir.create(bias.out.dir,showWarnings = FALSE)
@@ -162,6 +165,7 @@ if (argv$step == "estimation"){
   }
 
   # Skull Stripping
+  message('Skull stripping...')
   brain.out.dir = paste0(main_path, "/data/", p,  "/", ses, "/t1_brain")
   if(!argv$skullstripping){
     brain_paths = list.files(brain.out.dir, recursive = TRUE, full.names = TRUE)
@@ -173,14 +177,17 @@ if (argv$step == "estimation"){
 
   if (argv$skullstripping){
     dir.create(brain.out.dir,showWarnings = FALSE, recursive = TRUE)
+    message("Running HD-BET...")
     t1_brain<-hdbet(t1_biascorrect,device="cpu",hdbet_bin = hdbet_path)
+    message("Finished HD-BET...")
     brain_mask = t1_brain > 0 
     writenii(t1_brain,paste0(bias.out.dir,"/T1_brain_n4.nii.gz"))
     writenii(brain_mask,paste0(brain.out.dir,"/T1_brainmask.nii.gz"))
   }
 
 
-  # Registration to FLAIR Space
+  # Registration to FLAIR space
+  message('FLAIR space registration...')
   reg.out.dir = paste0(main_path, "/data/", p, "/", ses, "/registration/FLAIR_space")
   if (argv$registration){
       dir.create(reg.out.dir,showWarnings = FALSE, recursive = TRUE)
@@ -206,6 +213,7 @@ if (argv$step == "estimation"){
   }
 
   # WhiteStripe normalize data
+  message('WhiteStripe normalization...')
   white.out.dir = paste0(main_path, "/data/", p, "/", ses, "/whitestripe/FLAIR_space")
   if(argv$whitestripe){
       dir.create(white.out.dir,showWarnings = FALSE, recursive = TRUE)
@@ -221,6 +229,7 @@ if (argv$step == "estimation"){
   }
 
   # Mimosa
+  message('MIMoSA segmentation...')
   mim.out.dir = paste0(main_path, "/data/", p, "/", ses, "/mimosa")
   if(argv$mimosa){
       dir.create(mim.out.dir,showWarnings = FALSE)
@@ -253,6 +262,7 @@ if (argv$step == "estimation"){
   antsImageWrite(prob_05_erode, file.path(mim.out.dir, "/eroded_candidates_flairspace.nii.gz"))
 
   # Register to EPI Space
+  message('Registration to EPI space...')
   reg.epi.out.dir = paste0(main_path, "/data/", p, "/", ses, "/registration/EPI_space")
 
   reg.epi.files <- paste0(reg.epi.out.dir, c(
@@ -309,6 +319,7 @@ if (argv$step == "estimation"){
       eroded_candidates <- readnii(paste0(reg.epi.out.dir, "/eroded_candidates"))
   }
 
+  message('Making predictions...')
   make_predictions(
   t1 = t1_reg_epi,
   flair = flair_reg_epi,
