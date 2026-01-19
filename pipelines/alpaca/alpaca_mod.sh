@@ -190,7 +190,7 @@ if [ "$step" = "estimation" ]; then
   fi
   if [ "$mode" = "batch" ]; then
 
-  
+
 echo "Available Patients dir: $main_path/data"
 
 for p in "$main_path/data"/*/; do
@@ -271,7 +271,7 @@ for p in "$main_path/data"/*/; do
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --hdbetpath $hdbet_path --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
           elif [ "$c" = "docker" ]; then
-            docker run --memory=64g --memory-swap=64g --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/alpaca/alpaca_mod.R --mainpath /home/main \
+            docker run --memory=64g --memory-swap=64g --rm -it -v $main_path:/home/main -v $tool_path:/home/tool -v $HOME:/home/$USER -e HOME=/home/$USER -u $(id -u):$(id -g) $docker_path Rscript /home/tool/pipelines/alpaca/alpaca_mod.R --mainpath /home/main \
             --participant $p --session $ses --t1 $t1_r --flair $flair_r --epi_mag $epimag_r --epi_phase $epipha_r --n4 $n4 --skullstripping $skullstripping \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --hdbetpath /opt/fsl-6.0.7.19/bin/hd-bet --lesioncenter /home/tool/lesioncenter --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --helpfunc /home/tool/help_functions > $main_path/log/output/alpaca_output_${p}_${ses}.log 2> $main_path/log/error/alpaca_error_${p}_${ses}.log
@@ -296,7 +296,7 @@ if [ "$step" = "consolidation" ]; then
        -B /scratch $sin_path \
        Rscript $tool_path/pipelines/alpaca/alpaca_mod.R  --mainpath $main_path --step $step
     elif [ "$c" = "docker" ]; then
-      docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript $tool_path/pipelines/alpaca/alpaca_mod.R --mainpath /home/main --step $step > /home/main/log/output/alpaca_output_consolidation.log 2> /home/main/log/error/alpaca_error_consolidation.log
+      docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool -v $HOME:/home/$USER -e HOME=/home/$USER -u $(id -u):$(id -g) $docker_path Rscript $tool_path/pipelines/alpaca/alpaca_mod.R --mainpath /home/main --step $step > /home/main/log/output/alpaca_output_consolidation.log 2> /home/main/log/error/alpaca_error_consolidation.log
     fi
 fi
   
