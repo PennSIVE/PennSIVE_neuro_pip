@@ -289,14 +289,14 @@ if [ "$step" = "consolidation" ]; then
                   show_help
                   exit 1   
     elif [ "$c" = "singularity" ]; then
-      module load singularity
-      bsub -J "cvs" -oo $main_path/log/output/alpaca_output_consolidation.log -eo $main_path/log/error/alpaca_error_consolidation.log singularity run --cleanenv \
+      module load apptainer
+      bsub -J "alpaca" -oo $main_path/log/output/alpaca_output_consolidation.log -eo $main_path/log/error/alpaca_error_consolidation.log singularity run --cleanenv \
        -B $main_path \
        -B $tool_path \
        -B /scratch $sin_path \
        Rscript $tool_path/pipelines/alpaca/alpaca_mod.R  --mainpath $main_path --step $step
     elif [ "$c" = "docker" ]; then
-      docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool -v $HOME:/home/$USER -e HOME=/home/$USER -u $(id -u):$(id -g) $docker_path Rscript $tool_path/pipelines/alpaca/alpaca_mod.R --mainpath /home/main --step $step > /home/main/log/output/alpaca_output_consolidation.log 2> /home/main/log/error/alpaca_error_consolidation.log
+      docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool -v $HOME:/home/$USER -e HOME=/home/$USER -u $(id -u):$(id -g) $docker_path Rscript /home/tool/pipelines/alpaca/alpaca_mod.R --mainpath /home/main --step $step > $main_path/log/output/alpaca_output_consolidation.log 2> $main_path/log/error/alpaca_error_consolidation.log
     fi
 fi
   

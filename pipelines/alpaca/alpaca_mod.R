@@ -9,6 +9,8 @@ suppressMessages(library(ANTsRCore))
 suppressMessages(library(mimosa))
 suppressMessages(library(torch))
 suppressMessages(library(purrr))
+suppressMessages(library(dplyr))
+suppressMessages(library(readr))
 
 p <- arg_parser("Running ALPaCA pipeline to assess the CVS, PRLs, and lesions.", hide.opts = FALSE)
 p <- add_argument(p, "--mainpath", short = '-m', help = "Specify the main path where MRI images can be found.")
