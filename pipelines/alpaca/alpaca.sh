@@ -2,7 +2,7 @@
 
 # Define a function to display the help message
 show_help() {
-  echo "Usage: cvs.sh [option]"
+  echo "Usage: alpaca.sh [option]"
   echo "Options:"
   echo "  -h, --help    Show help message"
   echo "  -m, --mainpath    Look for files in the mainpath"
