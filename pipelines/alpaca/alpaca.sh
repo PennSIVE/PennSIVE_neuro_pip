@@ -18,7 +18,7 @@ show_help() {
   echo "  -w, --whitestripe   Specify whether to run whitestripe step. Default is TRUE"
   echo "  --mimosa   Specify whether to run mimosa segmentation step. Default is TRUE"
   echo "  --threshold   Specify the threshold used to generate mimosa mask. Default is 0.05"
-  echo "  --step   Specify the step of pipeline. estimation or consolidation. Default is estimation"
+  echo "  --step   Specify the step of pipeline, estimation or consolidation. Default is estimation"
   echo "  --mode   Specify whether to run the pipeline individually or in a batch: individual or batch. Default is batch"
   echo "  -c, --container   Specify the container to use: singularity, docker, local, cluster. Default is cluster"
   echo "  --sinpath   Specify the path to the singularity image if a singularity container is used. A default path is provided: /project/singularity_images/pennsive_amd64_cputorch.sif"
