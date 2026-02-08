@@ -48,19 +48,10 @@ if (argv$step == "estimation"){
   ses = argv$session
   anat.path<-paste0(main_path, "/data/", p,  "/", ses, "/anat/")
   message('Checking inputs...')
-  if(is.na(argv$t1)) stop("Missing T1 sequence!")else{
-    t1 = readnii(paste0(anat.path, argv$t1))
-    }
-    if(is.na(argv$flair)) stop("Missing FLAIR sequence!")else{
-      flair = readnii(paste0(anat.path, argv$flair))
-    }
-
-    if(is.na(argv$epi_mag)) stop("Missing EPI magnitude image!")else{
-      epi_map = read_rpi(paste0(anat.path, argv$epi_mag))
-    }
-    if(is.na(argv$epi_phase)) stop("Missing EPI phase image!")else{
-      epi_phase = read_rpi(paste0(anat.path, argv$epi_phase))
-    }
+  if(is.na(argv$t1)) stop("Missing T1 sequence!")
+    if(is.na(argv$flair)) stop("Missing FLAIR sequence!")
+    if(is.na(argv$epi_mag)) stop("Missing EPI magnitude image!")
+    if(is.na(argv$epi_phase)) stop("Missing EPI phase image!")
 
   # Specify output directory
   outdir = paste0(main_path, "/data/", p,  "/", ses, "/alpaca")
@@ -321,15 +312,27 @@ if (argv$step == "estimation"){
       eroded_candidates <- readnii(paste0(reg.epi.out.dir, "/eroded_candidates"))
   }
 
+  # Calculate normalized images for DL network
+  t1_dist <- c(mean(t1_reg_epi[brainmask_reg_epi!=0]), sd(t1_reg_epi[brainmask_reg_epi!=0]))
+  t1_final <- ((t1_reg_epi - t1_dist[1]) / t1_dist[2]) * (brainmask_reg_epi!=0)
+
+  flair_dist <- c(mean(t1_reg_epi[brainmask_reg_epi!=0]), sd(t1_reg_epi[brainmask_reg_epi!=0]))
+  flair_final <- ((t1_reg_epi - flair_dist[1]) / flair_dist[2]) * (brainmask_reg_epi!=0)
+
+  epi_dist <- c(mean(epi_n4_brain[brainmask_reg_epi!=0]), sd(epi_n4_brain[brainmask_reg_epi!=0]))
+  epi_final <- ((epi_n4_brain - epi_dist[1]) / epi_dist[2]) * (brainmask_reg_epi!=0)
+
+  phase_dist <- c(mean(phase_n4_brain[brainmask_reg_epi!=0]), sd(phase_n4_brain[brainmask_reg_epi!=0]))
+  phase_final <- ((phase_n4_brain - phase_dist[1]) / phase_dist[2]) * (brainmask_reg_epi!=0)
+
   message('Making predictions...')
   make_predictions(
-  t1 = t1_reg_epi,
-  flair = flair_reg_epi,
-  epi = epi_n4_brain,
-  phase = phase_n4_brain,
+  t1 = t1_final,
+  flair = flair_final,
+  epi = epi_final,
+  phase = phase_final,
   labeled_candidates = labeled_candidates,
-  eroded_candidates = eroded_candidates,
-  output_dir = outdir
+  eroded_candidates = eroded_candidates
   )
 } else if(argv$step == "consolidation"){
   alpaca_con = list.files(paste0(main_path, "/data"), pattern = "probabilities.csv", recursive = TRUE, full.names = TRUE) %>% read_csv() %>% bind_rows()
