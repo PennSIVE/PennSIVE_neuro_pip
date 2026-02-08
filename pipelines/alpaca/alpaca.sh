@@ -237,12 +237,12 @@ if [ "$step" = "estimation" ]; then
                -B $main_path \
                -B $tool_path \
                -B /scratch $sin_path \
-               Rscript $tool_path/pipelines/alpaca/alpaca_mod.R --mainpath $main_path \
+               Rscript $tool_path/pipelines/alpaca/alpaca.R --mainpath $main_path \
             --participant $p --session $s --t1 $t1_r --flair $flair_r --epi_mag $epimag_r --epi_phase $epipha_r --n4 $n4 --skullstripping $skullstripping \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --hdbetpath $hdbet_path --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
                 elif [ "$c" = "docker" ]; then
-            docker run --memory=$docker_mem --memory-swap=$docker_mem --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/alpaca/alpaca_mod.R --mainpath /home/main \
+            docker run --memory=$docker_mem --memory-swap=$docker_mem --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/alpaca/alpaca.R --mainpath /home/main \
             --participant $p --session $s --t1 $t1_r --flair $flair_r --epi_mag $epimag_r --epi_phase $epipha_r --n4 $n4 --skullstripping $skullstripping \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --hdbetpath /opt/fsl-6.0.7.19/bin/hd-bet --lesioncenter /home/tool/lesioncenter --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --helpfunc /home/tool/help_functions > $main_path/log/output/alpaca_output_${p}_${s}.log 2> $main_path/log/error/alpaca_error_${p}_${s}.log
@@ -279,12 +279,12 @@ if [ "$step" = "estimation" ]; then
                -B $main_path \
                -B $tool_path \
                -B /scratch $sin_path \
-               Rscript $tool_path/pipelines/alpaca/alpaca_mod.R --mainpath $main_path \
+               Rscript $tool_path/pipelines/alpaca/alpaca.R --mainpath $main_path \
             --participant $p --session $ses --t1 $t1_r --flair $flair_r --epi_mag $epimag_r --epi_phase $epipha_r --n4 $n4 --skullstripping $skullstripping \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --hdbetpath $hdbet_path --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
           elif [ "$c" = "docker" ]; then
-            docker run --memory=$docker_mem --memory-swap=$docker_mem --rm -it -v $main_path:/home/main -v $tool_path:/home/tool -v $HOME/hd-bet_params:/home/$USER/hd-bet_params -e HOME=/home/$USER $docker_path Rscript /home/tool/pipelines/alpaca/alpaca_mod.R --mainpath /home/main \
+            docker run --memory=$docker_mem --memory-swap=$docker_mem --rm -it -v $main_path:/home/main -v $tool_path:/home/tool -v $HOME/hd-bet_params:/home/$USER/hd-bet_params -e HOME=/home/$USER $docker_path Rscript /home/tool/pipelines/alpaca/alpaca.R --mainpath /home/main \
             --participant $p --session $ses --t1 $t1_r --flair $flair_r --epi_mag $epimag_r --epi_phase $epipha_r --n4 $n4 --skullstripping $skullstripping \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --hdbetpath /opt/fsl-6.0.7.19/bin/hd-bet --lesioncenter /home/tool/lesioncenter --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --helpfunc /home/tool/help_functions > $main_path/log/output/alpaca_output_${p}_${ses}.log 2> $main_path/log/error/alpaca_error_${p}_${ses}.log
@@ -307,9 +307,9 @@ if [ "$step" = "consolidation" ]; then
        -B $main_path \
        -B $tool_path \
        -B /scratch $sin_path \
-       Rscript $tool_path/pipelines/alpaca/alpaca_mod.R  --mainpath $main_path --step $step
+       Rscript $tool_path/pipelines/alpaca/alpaca.R  --mainpath $main_path --step $step
     elif [ "$c" = "docker" ]; then
-      docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool -v $HOME/hd-bet_params:/home/$USER/hd-bet_params -e HOME=/home/$USER $docker_path Rscript /home/tool/pipelines/alpaca/alpaca_mod.R --mainpath /home/main --step $step > $main_path/log/output/alpaca_output_consolidation.log 2> $main_path/log/error/alpaca_error_consolidation.log
+      docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool -v $HOME/hd-bet_params:/home/$USER/hd-bet_params -e HOME=/home/$USER $docker_path Rscript /home/tool/pipelines/alpaca/alpaca.R --mainpath /home/main --step $step > $main_path/log/output/alpaca_output_consolidation.log 2> $main_path/log/error/alpaca_error_consolidation.log
     fi
 fi
   
