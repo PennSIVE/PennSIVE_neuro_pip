@@ -316,8 +316,8 @@ if (argv$step == "estimation"){
   t1_dist <- c(mean(t1_reg_epi[brainmask_reg_epi!=0]), sd(t1_reg_epi[brainmask_reg_epi!=0]))
   t1_final <- ((t1_reg_epi - t1_dist[1]) / t1_dist[2]) * (brainmask_reg_epi!=0)
 
-  flair_dist <- c(mean(t1_reg_epi[brainmask_reg_epi!=0]), sd(t1_reg_epi[brainmask_reg_epi!=0]))
-  flair_final <- ((t1_reg_epi - flair_dist[1]) / flair_dist[2]) * (brainmask_reg_epi!=0)
+  flair_dist <- c(mean(flair_reg_epi[brainmask_reg_epi!=0]), sd(flair_reg_epi[brainmask_reg_epi!=0]))
+  flair_final <- ((flair_reg_epi - flair_dist[1]) / flair_dist[2]) * (brainmask_reg_epi!=0)
 
   epi_dist <- c(mean(epi_n4_brain[brainmask_reg_epi!=0]), sd(epi_n4_brain[brainmask_reg_epi!=0]))
   epi_final <- ((epi_n4_brain - epi_dist[1]) / epi_dist[2]) * (brainmask_reg_epi!=0)
