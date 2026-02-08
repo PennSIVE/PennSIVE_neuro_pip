@@ -332,7 +332,8 @@ if (argv$step == "estimation"){
   epi = epi_final,
   phase = phase_final,
   labeled_candidates = labeled_candidates,
-  eroded_candidates = eroded_candidates
+  eroded_candidates = eroded_candidates,
+  output_dir = outdir
   )
 } else if(argv$step == "consolidation"){
   alpaca_con = list.files(paste0(main_path, "/data"), pattern = "probabilities.csv", recursive = TRUE, full.names = TRUE) %>% read_csv() %>% bind_rows()
