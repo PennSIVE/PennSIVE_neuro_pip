@@ -24,7 +24,7 @@ show_help() {
   echo "  --sinpath   Specify the path to the singularity image if a singularity container is used. A default path is provided: /project/singularity_images/pennsive_amd64_cputorch.sif"
   echo "  --dockerpath   Specify the path to the docker image if a docker container is used. Note - running on MacOS, be sure the memory limit of the VM (set in Docker Desktop) is sufficiently large. A default path is provided: russellshinohara/pennsive_arm64_cputorch:v1.1"
   echo "  --dockermem   Specify the memory and swap allocated to the docker image if a docker container is used. A default is provided: 48g"
-  echo "  --hdbetpath   Specify the path to the HD-BET binary. For the Docker container, this is hard-coded in this version. If pre-downloading model, this should be in ~/hd-bet_params/release_2.0.0/. A default path is provided: ~/.local/bin/hd-bet"
+  echo "  --hdbetpath   Specify the path to the HD-BET binary. For the Docker container, this is hard-coded in this version. If pre-downloading model, this should be in ~/hd-bet_params/release_2.0.0/. A default path is provided: /opt/fsl-6.0.7.19/bin/hd-bet"
   echo "  --toolpath   Specify the path to the saved pipeline folder, eg: /path/to/folder"
 }
 
@@ -55,7 +55,7 @@ c=cluster
 sin_path="/project/singularity_images/pennsive_amd64_cputorch.sif"
 tool_path=""
 docker_path=russellshinohara/pennsive_arm64_cputorch:v1.1
-hdbet_path="~/.local/bin/hd-bet"
+hdbet_path="/opt/fsl-6.0.7.19/bin/hd-bet"
 docker_mem=48g
 hdbet_model="~/hd-bet_params/"
 
