@@ -11,11 +11,11 @@ This pipeline requires all images to be organized in BIDS format. An example is 
 ![Data Structure](/pipelines/alpaca/figure/data_structure.png)
 
 ## Pipeline Options
-We offer two modes for the pipeline: individual and batch. If users want to run the pipeline for different participants one at a time, the participant's ID and session ID should be specified. Users can also run the pipeline in batch mode. The participant's ID and session ID can be skipped. Additionally, we provide two types of scenarios for running the pipeline: `singularity` (running the pipeline on High Performance Computing Cluster using the Singularity container), and `docker` (running the pipeline locally using the Docker container). We have mutliple containers available; please pull the appropriate one according to your system requirements:
+We offer two modes for the pipeline: individual and batch. If users want to run the pipeline for different participants one at a time, the participant's ID and session ID should be specified. Users can also run the pipeline in batch mode. The participant's ID and session ID can be skipped. Additionally, we provide two types of scenarios for running the pipeline: `singularity` (running the pipeline on High Performance Computing Cluster using the Singularity container), and `docker` (running the pipeline locally using the Docker container). Please pull the container below corresponding to your system requirements:
 
-AMD, CPU: russellshinohara/pennsive_amd64_cputorch:v1.1
-AMD, GPU: russellshinohara/pennsive_amd64_gputorch:v1.1
-ARM, CPU: russellshinohara/pennsive_arm64_cputorch:v1.1
+- **AMD, CPU**: russellshinohara/pennsive_amd64_cputorch:v1.1
+- **AMD, GPU**: russellshinohara/pennsive_amd64_gputorch:v1.1
+- **ARM, CPU**: russellshinohara/pennsive_arm64_cputorch:v1.1
 
 Detailed examples for running the pipeline are provided below (all in individual mode):
 
@@ -63,6 +63,6 @@ bash /path/to/PennSIVE_neuro_pip/pipelines/alpaca/alpaca.sh -m /path/to/project 
 ## Output Data Structure
 ![Output](/pipelines/alpaca/figure/output.png)
 
-Lesions are labeled as follows:
+Lesion-level probabilities are available in "probabilities.csv". Lesions in "alpaca_mask.nii.gz" are labeled as follows:
 
-![Codes](/pipelines/alpaca/figure/lesion_codes.pdf)
+![Codes](/pipelines/alpaca/figure/lesion_codes.png)
