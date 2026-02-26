@@ -65,4 +65,7 @@ bash /path/to/PennSIVE_neuro_pip/pipelines/alpaca/alpaca.sh -m /path/to/project 
 
 Lesion-level probabilities are available in "probabilities.csv". Lesions in "alpaca_mask.nii.gz" are labeled as follows:
 
-![Codes](/pipelines/alpaca/figure/lesion_codes.png)
+- 1: PRL- CVS-
+- 3: PRL+ CVS-
+- 5: PRL- CVS+
+- 7: PRL+ CVS+
