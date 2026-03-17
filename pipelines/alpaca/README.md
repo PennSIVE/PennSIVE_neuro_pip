@@ -3,7 +3,7 @@
 The ALPaCA pipeline integrates an automated technique for white matter lesion, PRL, and CVS segmentation, developed by [Dr. Hu](https://direct.mit.edu/imag/article/doi/10.1162/IMAG.a.932/133343/Automated-segmentation-of-multiple-sclerosis). It provides processed T1-weighted, T2-FLAIR, T2*-magnitude, and T2*-phase images, as well lesion, CVS, and PRL masks and lesion-level probabilities.
 
 ## Diagram
-![MIMoSA Workflow](/pipelines/alpaca/figure/alpaca_pipeline.png)
+![ALPaCA Workflow](/pipelines/alpaca/figure/alpaca_pipeline.png)
 
 ## Data Structure
 This pipeline requires all images to be organized in BIDS format. An example is provided below:
@@ -50,14 +50,14 @@ bash /path/to/PennSIVE_neuro_pip/pipelines/alpaca/alpaca.sh -m /path/to/project 
 -   `singularity` 
 
 ```bash
-bash /path/to/PennSIVE_neuro_pip/pipelines/alpaca/alpaca.sh -m /path/to/project -c singularity --toolpath /path/to/PennSIVE_neuro_pip
+bash /path/to/PennSIVE_neuro_pip/pipelines/alpaca/alpaca.sh -m /path/to/project --step consolidation -c singularity --toolpath /path/to/PennSIVE_neuro_pip
 ```
 
 
 -   `docker`
 
 ```bash
-bash /path/to/PennSIVE_neuro_pip/pipelines/alpaca/alpaca.sh -m /path/to/project -c docker --toolpath /path/to/PennSIVE_neuro_pip
+bash /path/to/PennSIVE_neuro_pip/pipelines/alpaca/alpaca.sh -m /path/to/project --step consolidation -c docker --toolpath /path/to/PennSIVE_neuro_pip
 ```
 
 ## Output Data Structure
