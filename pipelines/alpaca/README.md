@@ -13,9 +13,9 @@ This pipeline requires all images to be organized in BIDS format. An example is 
 ## Pipeline Options
 We offer two modes for the pipeline: individual and batch. If users want to run the pipeline for different participants one at a time, the participant's ID and session ID should be specified. Users can also run the pipeline in batch mode. The participant's ID and session ID can be skipped. Additionally, we provide two types of scenarios for running the pipeline: `singularity` (running the pipeline on High Performance Computing Cluster using the Singularity container), and `docker` (running the pipeline locally using the Docker container). Please pull the container below corresponding to your system requirements:
 
-- **AMD, CPU**: russellshinohara/pennsive_amd64_cputorch:v1.1
-- **AMD, GPU**: russellshinohara/pennsive_amd64_gputorch:v1.1
-- **ARM, CPU**: russellshinohara/pennsive_arm64_cputorch:v1.1
+- **AMD, CPU**: russellshinohara/pennsive_amd64_cputorch:v1.2
+- **AMD, GPU**: russellshinohara/pennsive_amd64_gputorch:v1.2
+- **ARM, CPU**: russellshinohara/pennsive_arm64_cputorch:v1.2
 
 Detailed examples for running the pipeline are provided below (all in individual mode):
 
@@ -26,7 +26,7 @@ Detailed examples for running the pipeline are provided below (all in individual
 
 -   `singularity` 
 ```bash
-singularity pull -F $sin_path docker://russellshinohara/pennsive_amd64_gputorch:v1.1
+singularity pull -F $sin_path docker://russellshinohara/pennsive_amd64_gputorch:v1.2
 ```
 ```bash
 bash /path/to/PennSIVE_neuro_pip/pipelines/alpaca/alpaca.sh -m /path/to/project -p sub-001 --ses ses-01 -t "*_T1w.nii.gz" -f "*_FLAIR.nii.gz" -ema "*_part-mag_T2star.nii.gz" -eph "*_part-phase_T2star_UNWRAPPED.nii.gz" -s TRUE --mode individual -c singularity --toolpath /path/to/PennSIVE_neuro_pip
@@ -36,7 +36,7 @@ bash /path/to/PennSIVE_neuro_pip/pipelines/alpaca/alpaca.sh -m /path/to/project 
 -   `docker`
 
 ```bash
-docker pull russellshinohara/pennsive_arm64_cputorch:v1.1
+docker pull russellshinohara/pennsive_arm64_cputorch:v1.2
 ```
 
 ```bash
