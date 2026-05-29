@@ -20,6 +20,7 @@ p <- add_argument(p, "--t1", help = "Specify the T1 sequence name.")
 p <- add_argument(p, "--flair", help = "Specify the FLAIR sequence name.")
 p <- add_argument(p, "--epi_mag", help = "Specify the EPI sequence magnitude image name.")
 p <- add_argument(p, "--epi_phase", help = "Specify the EPI sequence unwrapped phase image name.")
+p <- add_argument(p, "--lesion_mask", help = "Specify the optional EPI-space lesion mask.", default = NULL)
 p <- add_argument(p, "--n4", help = "Specify whether to run bias correction step.", default = TRUE)
 p <- add_argument(p, "--skullstripping", short = '-s', help = "Specify whether to run skull stripping step.", default = TRUE)
 p <- add_argument(p, "--registration", short = '-r', help = "Specify whether to run registration to FLAIR space step.", default = TRUE)
@@ -242,18 +243,40 @@ if (argv$step == "estimation"){
       probmap = readnii(paste0(mim.out.dir,"/mimosa_prob"))
   }
 
-  # Threshold MIMoSA mask and identify/split confluent lesions
-  prob_05 <- antsImageClone(oro2ants(probmap) > as.numeric(argv$threshold))
-  if (sum(prob_05) == 0) {
-      prob_05_labeled <- antsImageClone(prob_05)
-      prob_05_erode <- antsImageClone(prob_05)
-  } else {
-      prob_05_labeled <- oro2ants(ALPaCA:::label_lesion(probmap, prob_05, mincluster = 30))
-      prob_05_erode <- iMath(prob_05_labeled, "GE", 1)
-  }
-  antsImageWrite(prob_05_labeled, file.path(mim.out.dir, "/labeled_candidates_flairspace.nii.gz"))
-  antsImageWrite(prob_05_erode, file.path(mim.out.dir, "/eroded_candidates_flairspace.nii.gz"))
+    if (is.null(lesion_mask)) {
 
+      # Threshold MIMoSA mask and identify/split confluent lesions
+      prob_05 <- antsImageClone(oro2ants(probmap) > as.numeric(argv$threshold))
+      if (sum(prob_05) == 0) {
+          prob_05_labeled <- antsImageClone(prob_05)
+          prob_05_erode <- antsImageClone(prob_05)
+      } else {
+          prob_05_labeled <- oro2ants(ALPaCA:::label_lesion(probmap, prob_05, mincluster = 30))
+          prob_05_erode <- iMath(prob_05_labeled, "GE", 1)
+      }
+      antsImageWrite(prob_05_labeled, file.path(mim.out.dir, "/labeled_candidates_flairspace.nii.gz"))
+      antsImageWrite(prob_05_erode, file.path(mim.out.dir, "/eroded_candidates_flairspace.nii.gz"))
+
+    } else {
+      
+      message('Using custom lesion mask...')
+
+      # Read in lesion mask
+      lesion_mask_path = paste0(anat.path, argv$lesion_mask)
+      lesion_mask <- oro2ants(read_rpi(lesion_mask_path, verbose = verbose))
+
+      # Use custom map to identify lesions and split confluent lesions based on MIMoSA
+      if (sum(prob_05) == 0) {
+          prob_05_labeled <- antsImageClone(lesion_mask)
+          prob_05_erode <- antsImageClone(lesion_mask)
+      } else {
+          prob_05_labeled <- oro2ants(ALPaCA:::label_lesion(probmap, lesion_mask, mincluster = 30))
+          prob_05_erode <- iMath(prob_05_labeled, "GE", 1)
+      }
+      antsImageWrite(prob_05_labeled, file.path(mim.out.dir, "/labeled_candidates_flairspace.nii.gz"))
+      antsImageWrite(prob_05_erode, file.path(mim.out.dir, "/eroded_candidates_flairspace.nii.gz"))
+                    
+  }
   # Register to EPI Space
   message('Registration to EPI space...')
   reg.epi.out.dir = paste0(main_path, "/data/", p, "/", ses, "/registration/EPI_space")
