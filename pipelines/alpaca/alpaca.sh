@@ -12,7 +12,7 @@ show_help() {
   echo "  -f, --flair   Specify the FLAIR sequence name"
   echo "  -ema, --epimag   Specify the EPI magnitude image name"
   echo "  -eph, --epiphase   Specify the unwrapped EPI phase image name"
-  echo "  --lesionmask  Optional externally generated lesion mask in epi space"
+  echo "  --lesionmask  Optional externally generated lesion mask in FLAIR space"
   echo "  -n, --n4   Specify whether to run bias correction step. Default is TRUE"
   echo "  -s, --skullstripping   Specify whether to run skull stripping step. Default is FALSE"
   echo "  -r, --registration   Specify whether to run registration step. Default is TRUE"
