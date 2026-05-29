@@ -299,27 +299,45 @@ if [ "$step" = "estimation" ]; then
                   echo "Error: ALPaCA is only available as a container."
                   show_help
                   exit 1          
-            elif [ "$c" = "local" ]; then
+    elif [ "$c" = "local" ]; then
                   echo "Error: ALPaCA is only available as a container."
                   show_help
                   exit 1         
-            elif [ "$c" = "singularity" ]; then
-             module load apptainer
-
-              bsub -J "alpaca" -oo $main_path/log/output/alpaca_output_${p}_${ses}.log -eo $main_path/log/error/alpaca_error_${p}_${ses}.log singularity run --cleanenv \
-               -B $main_path \
-               -B $tool_path \
-               -B /scratch $sin_path \
-               Rscript $tool_path/pipelines/alpaca/alpaca.R --mainpath $main_path \
-            --participant $p --session $ses --t1 $t1_r --flair $flair_r --epi_mag $epimag_r --epi_phase $epipha_r --lesion_mask NULL --n4 $n4 --skullstripping $skullstripping \
-            --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
-            --hdbetpath $hdbet_path --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
-          elif [ "$c" = "docker" ]; then
-            docker run --memory=$docker_mem --memory-swap=$docker_mem --rm -it -v $main_path:/home/main -v $tool_path:/home/tool -v $HOME/hd-bet_params:/home/$USER/hd-bet_params -e HOME=/home/$USER $docker_path Rscript /home/tool/pipelines/alpaca/alpaca.R --mainpath /home/main \
-            --participant $p --session $ses --t1 $t1_r --flair $flair_r --epi_mag $epimag_r --epi_phase $epipha_r --n4 $n4 --skullstripping $skullstripping \
-            --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
-            --hdbetpath $hdbet_path --lesioncenter /home/tool/lesioncenter --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --helpfunc /home/tool/help_functions > $main_path/log/output/alpaca_output_${p}_${ses}.log 2> $main_path/log/error/alpaca_error_${p}_${ses}.log
-      fi
+    elif [ "$c" = "singularity" ]; then
+      module load apptainer
+            if [ -z "$lesion_mask" ]; then
+                bsub -J "alpaca" -oo $main_path/log/output/alpaca_output_${p}_${ses}.log -eo $main_path/log/error/alpaca_error_${p}_${ses}.log singularity run --cleanenv \
+                -B $main_path \
+                -B $tool_path \
+                -B /scratch $sin_path \
+                Rscript $tool_path/pipelines/alpaca/alpaca.R --mainpath $main_path \
+                  --participant $p --session $ses --t1 $t1_r --flair $flair_r --epi_mag $epimag_r --epi_phase $epipha_r --lesion_mask NULL --n4 $n4 --skullstripping $skullstripping \
+                  --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
+                  --hdbetpath $hdbet_path --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
+            else
+                bsub -J "alpaca" -oo $main_path/log/output/alpaca_output_${p}_${ses}.log -eo $main_path/log/error/alpaca_error_${p}_${ses}.log singularity run --cleanenv \
+                -B $main_path \
+                -B $tool_path \
+                -B /scratch $sin_path \
+                Rscript $tool_path/pipelines/alpaca/alpaca.R --mainpath $main_path \
+                  --participant $p --session $ses --t1 $t1_r --flair $flair_r --epi_mag $epimag_r --epi_phase $epipha_r --lesion_mask $lesion_mask_r --n4 $n4 --skullstripping $skullstripping \
+                  --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
+                  --hdbetpath $hdbet_path --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
+            fi
+    elif [ "$c" = "docker" ]; then
+            if [ -z "$lesion_mask" ]; then
+                docker run --memory=$docker_mem --memory-swap=$docker_mem --rm -it -v $main_path:/home/main -v $tool_path:/home/tool -v $HOME/hd-bet_params:/home/$USER/hd-bet_params -e HOME=/home/$USER $docker_path Rscript /home/tool/pipelines/alpaca/alpaca.R --mainpath /home/main \
+                --participant $p --session $ses --t1 $t1_r --flair $flair_r --epi_mag $epimag_r --epi_phase $epipha_r --lesion_mask NULL --n4 $n4 --skullstripping $skullstripping \
+                --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
+                --hdbetpath $hdbet_path --lesioncenter /home/tool/lesioncenter --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --helpfunc /home/tool/help_functions > $main_path/log/output/alpaca_output_${p}_${ses}.log 2> $main_path/log/error/alpaca_error_${p}_${ses}.log
+            else
+                docker run --memory=$docker_mem --memory-swap=$docker_mem --rm -it -v $main_path:/home/main -v $tool_path:/home/tool -v $HOME/hd-bet_params:/home/$USER/hd-bet_params -e HOME=/home/$USER $docker_path Rscript /home/tool/pipelines/alpaca/alpaca.R --mainpath /home/main \
+                --participant $p --session $ses --t1 $t1_r --flair $flair_r --epi_mag $epimag_r --epi_phase $epipha_r --lesion_mask $lesion_mask_r --n4 $n4 --skullstripping $skullstripping \
+                --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
+                --hdbetpath $hdbet_path --lesioncenter /home/tool/lesioncenter --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --helpfunc /home/tool/help_functions > $main_path/log/output/alpaca_output_${p}_${ses}.log 2> $main_path/log/error/alpaca_error_${p}_${ses}.log
+            fi
+        
+    fi
   fi
 fi 
 
