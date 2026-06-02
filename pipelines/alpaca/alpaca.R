@@ -1,5 +1,5 @@
 suppressMessages(library(argparser))
-suppressMessages(library(neurobase))
+1;95;0csuppressMessages(library(neurobase))
 suppressMessages(library(ALPaCA))
 suppressMessages(library(extrantsr))
 suppressMessages(library(WhiteStripe))
@@ -243,7 +243,7 @@ if (argv$step == "estimation"){
       probmap = readnii(paste0(mim.out.dir,"/mimosa_prob"))
   }
 
-    if (is.null(lesion_mask)) {
+    if (is.null(argv$lesion_mask)) {
 
       # Threshold MIMoSA mask and identify/split confluent lesions
       prob_05 <- antsImageClone(oro2ants(probmap) > as.numeric(argv$threshold))
