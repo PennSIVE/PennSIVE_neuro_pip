@@ -243,7 +243,7 @@ if (argv$step == "estimation"){
       probmap = readnii(paste0(mim.out.dir,"/mimosa_prob"))
   }
 
-    if (is.null(argv$lesion_mask)) {
+  if (is.null(argv$lesion_mask) || identical(argv$lesion_mask, "NULL")) {
 
       # Threshold MIMoSA mask and identify/split confluent lesions
       prob_05 <- antsImageClone(oro2ants(probmap) > as.numeric(argv$threshold))
