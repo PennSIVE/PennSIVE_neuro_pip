@@ -293,7 +293,7 @@ if [ "$step" = "estimation" ]; then
     epimag_r=`find $main_path/data/$p/$ses/anat -name $epi_mag -type f | xargs -I {} basename {}`
     epipha_r=`find $main_path/data/$p/$ses/anat -name $epi_phase -type f | xargs -I {} basename {}`
     if [ -n "$lesion_mask" ]; then 
-      lesion_mask_r=`find $main_path/data/$p/$s/anat -name $lesion_mask -type f | xargs -I {} basename {}` 
+      lesion_mask_r=`find $main_path/data/$p/$ses/anat -name $lesion_mask -type f | xargs -I {} basename {}` 
     fi
     if [ "$c" = "cluster" ]; then
                   echo "Error: ALPaCA is only available as a container."
