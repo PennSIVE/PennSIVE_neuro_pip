@@ -359,9 +359,20 @@ if (argv$step == "estimation"){
   output_dir = outdir
   )
 } else if(argv$step == "consolidation"){
-  alpaca_con = list.files(paste0(main_path, "/data"), pattern = "probabilities.csv", recursive = TRUE, full.names = TRUE) %>% read_csv() %>% bind_rows()
+  # parse out and save sub-XXX and ses-YY information in separate columns - BT 6/16/26
+  alpaca_con = list.files(paste0(main_path, "/data"), pattern = "probabilities.csv", recursive = TRUE, full.names = TRUE) %>%
+    lapply(function(f){
+      df = read_csv(f)
+      df$subject_id = sub(".*(sub-[^/]+).*", "\\1", f)
+      df$session_id = sub(".*(ses-[^/]+).*", "\\1", f)
+      df
+    }) %>%
+    bind_rows()
+
+  colnames(alpaca_con)[1] <- "LesionID"
   if(!file.exists(paste0(main_path, "/stats"))){
     dir.create(paste0(main_path, "/stats"))
   }
+
   write_csv(alpaca_con, paste0(main_path, "/stats/alpaca_score.csv"))
 }

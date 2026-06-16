@@ -611,13 +611,16 @@ if (argv$step == "estimation"){
     epi_ws_T2 = readnii(epi_ws_T2_path)
   }
 }else if(argv$step == "consolidation"){
+  cvs_files = list.files(paste0(main_path, "/data"), pattern = "cvs_biomarker.csv", recursive = TRUE, full.names = TRUE)
+  # parse out and save ses-YY information in separate column (sub-XXX is already included in cvs_biomarker.csv and carried over) - BT 6/16/26
+  cvs_con = lapply(cvs_files, function(x){
+    read_csv(x) %>%
+      mutate(session_id = str_extract(x, "ses-[0-9]+"))
+  }) %>% bind_rows()
+
   if(!file.exists(paste0(main_path, "/stats"))){
     dir.create(paste0(main_path, "/stats"))
   }
-  
-  # only write file if it doesn't already exist - EAH 5/6/26
-  if(!file.exists(paste0(main_path, "/stats/cvs_score.csv"))){
-    cvs_con = list.files(paste0(main_path, "/data"), pattern = "cvs_biomarker.csv", recursive = TRUE, full.names = TRUE) %>% read_csv() %>% bind_rows()
-    write_csv(cvs_con, paste0(main_path, "/stats/cvs_score.csv"))
-  }
+
+  write_csv(cvs_con, paste0(main_path, "/stats/cvs_score.csv"))
 }

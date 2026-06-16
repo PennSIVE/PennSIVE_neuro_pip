@@ -569,21 +569,25 @@ if (argv$step == "preparation"){
     preds = read.csv(preds_path)
   }
 }else if(argv$step == "consolidation"){
+  prl_files = list.files(paste0(main_path, "/data"), pattern = "*_preds.csv", recursive = TRUE, full.names = TRUE) 
+  # parse out and save sub-XXX and ses-YY information in separate columns - BT 6/16/26
+  prl_con = lapply(prl_files, function(x){
+    sub_file = read_csv(x)
+
+    subj = str_extract(x, "sub-[0-9]+")
+    ses  = str_extract(x, "ses-[0-9]+")
+
+    sub_file = sub_file %>% mutate(subject = subj,
+                                  session = ses)
+  }) %>% bind_rows()
+
+  colnames(prl_con) = c("lesion_id", "rim_neg", "rim_pos", "subject", "session")
+
   if(!file.exists(paste0(main_path, "/stats"))){
     dir.create(paste0(main_path, "/stats"))
   }
-  
-  # only write file if it doesn't already exist - EAH 5/7/26
-  if(!file.exists(paste0(main_path, "/stats/prl_probability.csv"))){
-    prl_files = list.files(paste0(main_path, "/data"), pattern = "*_preds.csv", recursive = TRUE, full.names = TRUE) 
-    prl_con = lapply(prl_files, function(x){
-      sub_file = read_csv(x)
-      subj = str_split(x, "/")[[1]][length(str_split(x, "/")[[1]]) - 2]
-      sub_file = sub_file %>% mutate(subject = subj)
-    }) %>% bind_rows()
-    colnames(prl_con) = c("lesion_id", "rim_neg", "rim_pos", "subject")
-    write_csv(prl_con, paste0(main_path, "/stats/prl_probability.csv"))
-  }
+
+  write_csv(prl_con, paste0(main_path, "/stats/prl_probability.csv"))
 }
 
 
