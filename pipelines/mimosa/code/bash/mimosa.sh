@@ -11,14 +11,15 @@ show_help() {
   echo "  -t, --t1    Specify the T1 sequence name"
   echo "  -f, --flair   Specify the FLAIR sequence name"
   echo "  -n, --n4   Specify whether to run bias correction step. Default is TRUE"
-  echo "  -s, --skullstripping   Specify whether to run skull stripping step. Default is FALSE"
+  echo "  -s, --skullstripping   Specify whether to run skull stripping step. Default is TRUE"
+  echo "  --stype   Specify which skullstripping method to use. Default is hdbet"
   echo "  -r, --registration   Specify whether to run registration step. Default is TRUE"
   echo "  -w, --whitestripe   Specify whether to run whitestripe step. Default is TRUE"
   echo "  --threshold   Specify the threshold used to generate mimosa mask. Default is 0.2"
   echo "  --mode   Specify whether to run the pipeline individually or in a batch: individual or batch. Default is batch"
   echo "  -c, --container   Specify the container to use: singularity, docker, local, cluster. Default is cluster"
-  echo "  --sinpath   Specify the path to the singularity image if a singularity container is used. A default path is provided: /project/singularity_images/neuror_latest.sif"
-  echo "  --dockerpath   Specify the path to the docker image if a docker container is used. A default path is provided: pennsive/neuror"
+  echo "  --sinpath   Specify the path to the singularity image if a singularity container is used. A default path is provided: /project/singularity_images/pennsive_amd64_cputorch.sif"
+  echo "  --dockerpath   Specify the path to the docker image if a docker container is used. A default path is provided: russellshinohara/pennsive_amd64_cputorch"
   echo "  --toolpath   Specify the path to the saved pipeline folder, eg: /path/to/folder"
 }
 
@@ -36,15 +37,16 @@ ses=""
 t1=""
 flair=""
 n4=TRUE
-skullstripping=FALSE
+skullstripping=TRUE
+stype="hdbet"
 registration=TRUE
 whitestripe=TRUE
 threshold=0.2
 mode=batch
 c=cluster
-sin_path="/project/singularity_images/neuror_latest.sif"
+sin_path="/project/singularity_images/pennsive_amd64_cputorch.sif"
 tool_path=""
-docker_path=pennsive/neuror
+docker_path=russellshinohara/pennsive_amd64_cputorch
 
 # Parse command-line arguments
 while [ $# -gt 0 ]; do
@@ -80,6 +82,10 @@ while [ $# -gt 0 ]; do
     -s|--skullstripping)
       shift
       skullstripping=$1
+      ;;
+    --stype)
+      shift
+      stype=$1
       ;;
     -r|--registration)
       shift
@@ -159,29 +165,29 @@ if [ "$mode" == "batch" ]; then
         if [ "$c" == "cluster" ]; then
           bsub -oo $main_path/log/output/mimosa_output_${p}_${s}.log -eo $main_path/log/error/mimosa_error_${p}_${s}.log \
           Rscript $tool_path/pipelines/mimosa/code/R/mimosa.R --mainpath $main_path \
-          --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-          --registration $registration --whitestripe $whitestripe --threshold $threshold \
-          --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData
+          --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
+          --registration $registration --whitestripe $whitestripe --threshold $threshold --container $c \
+          --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --toolpath $tool_path
         elif [ "$c" == "local" ]; then
           Rscript $tool_path/pipelines/mimosa/code/R/mimosa.R --mainpath $main_path \
-          --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-          --registration $registration --whitestripe $whitestripe --threshold $threshold \
-          --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData > $main_path/log/output/mimosa_output_${p}_${s}.log 2> $main_path/log/error/mimosa_error_${p}_${s}.log
+          --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
+          --registration $registration --whitestripe $whitestripe --threshold $threshold --container $c \
+          --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --toolpath $tool_path > $main_path/log/output/mimosa_output_${p}_${s}.log 2> $main_path/log/error/mimosa_error_${p}_${s}.log
         elif [ "$c" == "singularity" ]; then
-          module load singularity
+          module load apptainer
           bsub -J "mimosa" -oo $main_path/log/output/mimosa_output_${p}_${s}.log -eo $main_path/log/error/mimosa_error_${p}_${s}.log singularity run --cleanenv \
                -B $main_path \
                -B $tool_path \
                -B /scratch $sin_path \
                Rscript $tool_path/pipelines/mimosa/code/R/mimosa.R --mainpath $main_path \
-                  --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-                  --registration $registration --whitestripe $whitestripe --threshold $threshold \
-                  --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData
+                  --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
+                  --registration $registration --whitestripe $whitestripe --threshold $threshold --container $c \
+                  --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --toolpath $tool_path
         elif [ "$c" == "docker" ]; then
           docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/mimosa/code/R/mimosa.R --mainpath /home/main \
-                  --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-                  --registration $registration --whitestripe $whitestripe --threshold $threshold \
-                  --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData > /home/main/log/output/mimosa_output_${p}_${s}.log 2> /home/main/log/error/mimosa_error_${p}_${s}.log
+                  --participant $p --session $s --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
+                  --registration $registration --whitestripe $whitestripe --threshold $threshold --container $c \
+                  --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --toolpath $tool_path > /home/main/log/output/mimosa_output_${p}_${s}.log 2> /home/main/log/error/mimosa_error_${p}_${s}.log
         fi
       done
   done
@@ -205,29 +211,32 @@ elif [ "$mode" == "individual" ]; then
   if [ "$c" == "cluster" ]; then
     bsub -oo $main_path/log/output/mimosa_output_${p}_${ses}.log -eo $main_path/log/error/mimosa_error_${p}_${ses}.log \
     Rscript $tool_path/pipelines/mimosa/code/R/mimosa.R --mainpath $main_path \
-    --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-    --registration $registration --whitestripe $whitestripe --threshold $threshold \
-    --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData
+    --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
+    --registration $registration --whitestripe $whitestripe --threshold $threshold --container $c \
+    --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --toolpath $tool_path
   elif [ "$c" == "local" ]; then
           Rscript $tool_path/pipelines/mimosa/code/R/mimosa.R --mainpath $main_path \
-          --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-          --registration $registration --whitestripe $whitestripe --threshold $threshold \
-          --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData > $main_path/log/output/mimosa_output_${p}_${ses}.log 2> $main_path/log/error/mimosa_error_${p}_${ses}.log
+          --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
+          --registration $registration --whitestripe $whitestripe --threshold $threshold --container $c \
+          --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --toolpath $tool_path > $main_path/log/output/mimosa_output_${p}_${ses}.log 2> $main_path/log/error/mimosa_error_${p}_${ses}.log
   elif [ "$c" == "singularity" ]; then
-    module load singularity
+    module load apptainer
     bsub -J "mimosa" -oo $main_path/log/output/mimosa_output_${p}_${ses}.log -eo $main_path/log/error/mimosa_error_${p}_${ses}.log singularity run --cleanenv \
          -B $main_path \
          -B $tool_path \
+         -B /misc/appl/R-4.5:/misc/appl/R-4.5:ro \
+         -B /misc/appl/miniconda3-22.11:/misc/appl/miniconda3-22.11:ro \
+         --env LD_LIBRARY_PATH=/misc/appl/R-4.5/lib64/R/lib:/misc/appl/miniconda3-22.11/lib \
          -B /scratch $sin_path \
          Rscript $tool_path/pipelines/mimosa/code/R/mimosa.R --mainpath $main_path \
-            --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-            --registration $registration --whitestripe $whitestripe --threshold $threshold \
-            --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData
+            --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
+            --registration $registration --whitestripe $whitestripe --threshold $threshold --container $c \
+            --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --toolpath $tool_path
   elif [ "$c" == "docker" ]; then
       docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/mimosa/code/R/mimosa.R --mainpath /home/main \
-                  --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping \
-                  --registration $registration --whitestripe $whitestripe --threshold $threshold \
-                  --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData > /home/main/log/output/mimosa_output_${p}_${ses}.log 2> /home/main/log/error/mimosa_error_${p}_${ses}.log
+                  --participant $p --session $ses --t1 $t1_r --flair $flair_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
+                  --registration $registration --whitestripe $whitestripe --threshold $threshold --container $c \
+                  --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --toolpath $tool_path > /home/main/log/output/mimosa_output_${p}_${ses}.log 2> /home/main/log/error/mimosa_error_${p}_${ses}.log
   fi
 
 fi
