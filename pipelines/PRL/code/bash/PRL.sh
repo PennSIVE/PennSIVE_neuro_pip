@@ -13,6 +13,7 @@ show_help() {
   echo "  --phase   Specify the PHASE sequence name"
   echo "  -n, --n4   Specify whether to run bias correction step. Default is TRUE"
   echo "  -s, --skullstripping   Specify whether to run skull stripping step. Default is FALSE"
+  echo "  --stype   Specify which skullstripping method to use. Default is hdbet"
   echo "  -r, --registration   Specify whether to run registration step. Default is TRUE"
   echo "  -w, --whitestripe   Specify whether to run whitestripe step. Default is TRUE"
   echo "  --mimosa   Specify whether to run mimosa segmentation step. Default is TRUE"
@@ -21,8 +22,8 @@ show_help() {
   echo "  --step   Specify the step of pipeline. preparation, PRL_run or consolidation. Default is preparation"
   echo "  --mode   Specify whether to run the pipeline individually or in a batch: individual or batch. Default is batch"
   echo "  -c, --container   Specify the container to use: singularity, docker, local, cluster. Default is cluster"
-  echo "  --sinpath   Specify the path to the singularity image if a singularity container is used. A default path is provided: /project/singularity_images/neuror_latest.sif"
-  echo "  --dockerpath   Specify the path to the docker image if a docker container is used. A default path is provided: pennsive/neuror"
+  echo "  --sinpath   Specify the path to the singularity image if a singularity container is used. A default path is provided: /project/singularity_images/pennsive_amd64_cputorch.sif"
+  echo "  --dockerpath   Specify the path to the docker image if a docker container is used. A default path is provided: russellshinohara/pennsive_amd64_cputorch"
   echo "  --toolpath   Specify the path to the saved pipeline folder, eg: /path/to/folder"
 }
 
@@ -41,7 +42,8 @@ t1=""
 flair=""
 phase=""
 n4=TRUE
-skullstripping=FALSE
+skullstripping=TRUE
+stype="hdbet"
 registration=TRUE
 whitestripe=TRUE
 mimosa=TRUE
@@ -50,9 +52,9 @@ dilation=TRUE
 step=preparation
 mode=batch
 c=cluster
-sin_path="/project/singularity_images/neuror_latest.sif"
+sin_path="/project/singularity_images/pennsive_amd64_cputorch.sif"
 tool_path=""
-docker_path=pennsive/neuror
+docker_path=russellshinohara/pennsive_amd64_cputorch
 
 # Parse command-line arguments
 while [ $# -gt 0 ]; do
@@ -92,6 +94,10 @@ while [ $# -gt 0 ]; do
     -s|--skullstripping)
       shift
       skullstripping=$1
+      ;;
+    --stype)
+      shift
+      stype=$1
       ;;
     -r|--registration)
       shift
@@ -190,27 +196,27 @@ if [ "$step" == "preparation" ]; then
           if [ "$c" == "cluster" ]; then
             bsub -oo $main_path/log/output/prl_output_${p}_${s}.log -eo $main_path/log/error/prl_error_${p}_${s}.log \
             Rscript $tool_path/pipelines/PRL/code/R/PRL.R --mainpath $main_path \
-            --participant $p --session $s --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping \
+            --participant $p --session $s --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --dilation $dilation --step $step --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
           elif [ "$c" == "local" ]; then
             Rscript $tool_path/pipelines/PRL/code/R/PRL.R --mainpath $main_path \
-            --participant $p --session $s --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping \
+            --participant $p --session $s --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --dilation $dilation --step $step --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions > $main_path/log/output/prl_output_${p}_${s}.log 2> $main_path/log/error/prl_error_${p}_${s}.log
           elif [ "$c" == "singularity" ]; then
-            module load singularity
+            module load apptainer
             bsub -J "APRL" -oo $main_path/log/output/prl_output_${p}_${s}.log -eo $main_path/log/error/prl_error_${p}_${s}.log singularity run --cleanenv \
                -B $main_path \
                -B $tool_path \
                -B /scratch $sin_path \
                Rscript $tool_path/pipelines/PRL/code/R/PRL.R --mainpath $main_path \
-               --participant $p --session $s --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping \
+               --participant $p --session $s --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
                --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
                --dilation $dilation --step $step --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --helpfunc $tool_path/help_functions
           elif [ "$c" == "docker" ]; then
             docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/PRL/code/R/PRL.R --mainpath /home/main \
-            --participant $p --session $s --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping \
+            --participant $p --session $s --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --dilation $dilation --step $step --lesioncenter /home/tool/lesioncenter --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --helpfunc /home/tool/help_functions > /home/main/log/output/prl_output_${p}_${s}.log 2> /home/main/log/error/prl_error_${p}_${s}.log
           fi
@@ -236,27 +242,27 @@ if [ "$step" == "preparation" ]; then
     if [ "$c" == "cluster" ]; then
             bsub -oo $main_path/log/output/prl_output_${p}_${ses}.log -eo $main_path/log/error/prl_error_${p}_${ses}.log \
             Rscript $tool_path/pipelines/PRL/code/R/PRL.R --mainpath $main_path \
-            --participant $p --session $ses --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping \
+            --participant $p --session $ses --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --dilation $dilation --step $step --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --aprlpath $tool_path/pipelines/PRL/model/prl_model.rds --helpfunc $tool_path/help_functions
           elif [ "$c" == "local" ]; then
             Rscript $tool_path/pipelines/PRL/code/R/PRL.R --mainpath $main_path \
-            --participant $p --session $ses --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping \
+            --participant $p --session $ses --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --dilation $dilation --step $step --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --aprlpath $tool_path/pipelines/PRL/model/prl_model.rds --helpfunc $tool_path/help_functions > $main_path/log/output/prl_output_${p}_${ses}.log 2> $main_path/log/error/prl_error_${p}_${ses}.log
           elif [ "$c" == "singularity" ]; then
-            module load singularity
+            module load apptainer
             bsub -J "APRL" -oo $main_path/log/output/prl_output_${p}_${ses}.log -eo $main_path/log/error/prl_error_${p}_${ses}.log singularity run --cleanenv \
                -B $main_path \
                -B $tool_path \
                -B /scratch $sin_path \
                Rscript $tool_path/pipelines/PRL/code/R/PRL.R --mainpath $main_path \
-               --participant $p --session $ses --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping \
+               --participant $p --session $ses --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
                --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
                --dilation $dilation --step $step --lesioncenter $tool_path/lesioncenter --mpath $tool_path/pipelines/mimosa/model/mimosa_model.RData --aprlpath $tool_path/pipelines/PRL/model/prl_model.rds --helpfunc $tool_path/help_functions
           elif [ "$c" == "docker" ]; then
             docker run --rm -it -v $main_path:/home/main -v $tool_path:/home/tool $docker_path Rscript /home/tool/pipelines/PRL/code/R/PRL.R --mainpath /home/main \
-            --participant $p --session $ses --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping \
+            --participant $p --session $ses --t1 $t1_r --flair $flair_r --phase $phase_r --n4 $n4 --skullstripping $skullstripping --stype $stype \
             --registration $registration --whitestripe $whitestripe --mimosa $mimosa --threshold $threshold \
             --dilation $dilation --step $step --lesioncenter /home/tool/lesioncenter --mpath /home/tool/pipelines/mimosa/model/mimosa_model.RData --aprlpath /home/tool/pipelines/PRL/model/prl_model.rds --helpfunc /home/tool/help_functions > /home/main/log/output/prl_output_${p}_${ses}.log 2> /home/main/log/error/prl_error_${p}_${ses}.log
           fi
@@ -284,7 +290,7 @@ if [ "$step" == "PRL_run" ]; then
             Rscript $tool_path/pipelines/PRL/code/R/PRL.R --mainpath $main_path \
             --participant $p --session $s --step $step --lesioncenter $tool_path/lesioncenter --aprlpath $tool_path/pipelines/PRL/model/prl_model.rds --helpfunc $tool_path/help_functions > $main_path/log/output/prl_output_${p}_${s}.log 2> $main_path/log/error/prl_error_${p}_${s}.log
           elif [ "$c" == "singularity" ]; then
-            module load singularity
+            module load apptainer
             bsub -J "APRL" -oo $main_path/log/output/prl_output_${p}_${s}.log -eo $main_path/log/error/prl_error_${p}_${s}.log singularity run --cleanenv \
                -B $main_path \
                -B $tool_path \
@@ -318,7 +324,7 @@ if [ "$step" == "PRL_run" ]; then
             Rscript $tool_path/pipelines/PRL/code/R/PRL.R --mainpath $main_path \
             --participant $p --session $ses --step $step --lesioncenter $tool_path/lesioncenter --aprlpath $tool_path/pipelines/PRL/model/prl_model.rds --helpfunc $tool_path/help_functions > $main_path/log/output/prl_output_${p}_${ses}.log 2> $main_path/log/error/prl_error_${p}_${ses}.log
           elif [ "$c" == "singularity" ]; then
-            module load singularity
+            module load apptainer
             bsub -J "APRL" -oo $main_path/log/output/prl_output_${p}_${ses}.log -eo $main_path/log/error/prl_error_${p}_${ses}.log singularity run --cleanenv \
                -B $main_path \
                -B $tool_path \
@@ -341,7 +347,7 @@ if [ "$step" == "consolidation" ]; then
   elif [ "$c" == "local" ]; then
     Rscript $tool_path/pipelines/PRL/code/R/PRL.R --mainpath $main_path --step $step > $main_path/log/output/prl_output_consolidation.log 2> $main_path/log/error/prl_error_consolidation.log
   elif [ "$c" == "singularity" ]; then
-    module load singularity
+    module load apptainer
     bsub -J "APRL" -oo $main_path/log/output/prl_output_consolidation.log -eo $main_path/log/error/prl_error_consolidation.log singularity run --cleanenv \
        -B $main_path \
        -B $tool_path \

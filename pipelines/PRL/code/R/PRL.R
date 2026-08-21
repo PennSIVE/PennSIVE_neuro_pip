@@ -27,7 +27,8 @@ p <- add_argument(p, "--t2", help = "Specify the T2 sequence name.")
 p <- add_argument(p, "--flair", help = "Specify the FLAIR sequence name.")
 p <- add_argument(p, "--phase", help = "Specify the Phase sequence name.")
 p <- add_argument(p, "--n4", help = "Specify whether to run bias correction step.", default = TRUE)
-p <- add_argument(p, "--skullstripping", short = '-s', help = "Specify whether to run skull stripping step.", default = FALSE)
+p <- add_argument(p, "--skullstripping", short = '-s', help = "Specify whether to run skull stripping step.", default = TRUE)
+p <- add_argument(p, "--stype", help = "Specify which skullstripping method to use.", default = 'hdbet')
 p <- add_argument(p, "--registration", short = '-r', help = "Specify whether to run registration step.", default = TRUE)
 p <- add_argument(p, "--whitestripe", short = '-w', help = "Specify whether to run whitestripe step.", default = TRUE)
 p <- add_argument(p, "--mimosa", help = "Specify whether to run mimosa segmentation step.", default = TRUE)
@@ -66,6 +67,7 @@ if (argv$step == "preparation"){
   # Bias Correction
   bias.out.dir = paste0(main_path, "/data/", p, "/", ses, "/bias_correction")
   if(argv$n4){
+    message('Starting bias correction...')
     # only create directory if it doesn't already exist - EAH 5/7/26
     if (!dir.exists(bias.out.dir)) {
       dir.create(bias.out.dir,showWarnings = FALSE)
@@ -140,60 +142,124 @@ if (argv$step == "preparation"){
     }
   }
 
+  message('Finished bias correction')
+
   # Skull Stripping
   brain.out.dir = paste0(main_path, "/data/", p, "/", ses, "/t1_brain")
-  if(!argv$skullstripping){
+
+  if (!argv$skullstripping) {
+    # read pre-existing skull-stripped brain
     brain_paths = list.files(brain.out.dir, recursive = TRUE, full.names = TRUE)
-    brain_path = brain_paths[which(grepl("*brain.nii.gz$", brain_paths))]
-    brain_mask_path = brain_paths[which(grepl("*brainmask.nii.gz$", brain_paths))]
-    t1_fslbet_robust = readnii(brain_path)
-    brain_mask = readnii(brain_mask_path)
-    existing_files = list.files(bias.out.dir)
-    t1_n4_brain_file = existing_files[which(grepl("T1_brain_n4*", existing_files))]
-    if(length(t1_n4_brain_file) == 0){
-      t1_fslbet_robust = bias_correct(file = t1_fslbet_robust,
-                               correction = "N4",
-                               verbose = TRUE)
-      # only write file if it doesn't exist - EAH 5/7/26
-      if (!file.exists(paste0(bias.out.dir,"/T1_brain_n4.nii.gz"))) {
-        writenii(t1_fslbet_robust,paste0(bias.out.dir,"/T1_brain_n4.nii.gz"))
-      }
-    }else{
-      t1_fslbet_robust = readnii(paste0(bias.out.dir, "/T1_brain_n4.nii.gz"))
-      } 
+
+    # Match *brain.nii.gz but exclude mask files
+    brain_path = brain_paths[grepl("brain\\.nii\\.gz$", brain_paths) &
+                              !grepl("(brainmask|brain_mask)\\.nii\\.gz$", brain_paths)]
+
+    # Accept both FSL BET convention (T1_brainmask.nii.gz)
+    #        and HD-BET convention  (T1_brain_mask.nii.gz)
+    brain_mask_path = brain_paths[grepl("(brainmask|brain_mask)\\.nii\\.gz$", brain_paths)]
+
+    if (length(brain_path) == 0) {
+      stop("No brain file found in: ", brain.out.dir,
+          "\nExpected a file matching *brain.nii.gz (e.g. T1_brain.nii.gz)")
+    }
+    if (length(brain_mask_path) == 0) {
+      stop("No brain mask found in: ", brain.out.dir,
+          "\nExpected T1_brainmask.nii.gz (FSL BET) or T1_brain_mask.nii.gz (HD-BET)")
     }
 
-  if (argv$skullstripping){
-    # only create directory if it doesn't already exist - EAH 5/6/26
-    if (!dir.exists(brain.out.dir)) {
-      dir.create(brain.out.dir,showWarnings = FALSE)
-    }
-    
-    # file check - EAH 5/6/26
-    t1_fslbet_robust_path = paste0(brain.out.dir,"/T1_brain.nii.gz")
-    brain_mask_path = paste0(brain.out.dir,"/T1_brainmask.nii.gz")
-    
-    files_skullstripping = c(t1_fslbet_robust = t1_fslbet_robust_path, brain_mask = brain_mask_path)
-    missing_files_skullstripping = files_skullstripping[!file.exists(c(t1_fslbet_robust_path, brain_mask_path))]
-    
-    if ('t1_fslbet_robust' %in% names(missing_files_skullstripping)) {
-      t1_fslbet_robust = fslbet_robust(t1_biascorrect,reorient = FALSE,correct = FALSE)
-      writenii(t1_fslbet_robust,paste0(brain.out.dir,"/T1_brain.nii.gz"))
-      writenii(t1_fslbet_robust,paste0(bias.out.dir,"/T1_brain_n4.nii.gz"))
-    } else {
-      t1_fslbet_robust = readnii(t1_fslbet_robust_path)
-    }
-    if ('brain_mask' %in% names(missing_files_skullstripping)) {
-      brain_mask = t1_fslbet_robust > 0 
-      writenii(brain_mask,paste0(brain.out.dir,"/T1_brainmask.nii.gz"))
-    } else {
-      brain_mask = readnii(brain_mask_path)
+    t1_brain = readnii(brain_path)
+    brain_mask       = readnii(brain_mask_path)
+    t1_brain = bias_correct(file = t1_brain, correction = "N4", verbose = TRUE)
+
+    if (!file.exists(paste0(bias.out.dir, "/T1_brain_n4.nii.gz"))) {
+      writenii(t1_brain, paste0(bias.out.dir, "/T1_brain_n4.nii.gz"))
     }
   }
+
+  if (argv$skullstripping) {
+    message('Starting skullstripping...')
+    # run skull stripping
+    t1_brain_path   = paste0(brain.out.dir, "/T1_brain.nii.gz")
+    brain_mask_path = paste0(brain.out.dir, "/T1_brainmask.nii.gz")
+
+    files_skullstripping = c(t1_brain   = t1_brain_path,
+                              brain_mask = brain_mask_path)
+    missing_files_skullstripping = files_skullstripping[
+      !file.exists(c(t1_brain_path, brain_mask_path))
+    ]
+
+    if (!dir.exists(brain.out.dir)) {
+      dir.create(brain.out.dir, showWarnings = FALSE)
+    }
+
+    # FSL BET
+    if (argv$stype == "fslbet") {
+      message("Running FSL BET skull stripping on bias-corrected T1...")
+
+      if ('t1_brain' %in% names(missing_files_skullstripping)) {
+        t1_brain = fslbet_robust(t1_biascorrect, reorient = FALSE, correct = FALSE)
+        writenii(t1_brain, t1_brain_path)
+        writenii(t1_brain, paste0(bias.out.dir, "/T1_brain_n4.nii.gz"))
+      } else {
+        t1_brain = readnii(t1_brain_path)
+      }
+
+      if ('brain_mask' %in% names(missing_files_skullstripping)) {
+        brain_mask = t1_brain > 0
+        writenii(brain_mask, brain_mask_path)
+      } else {
+        brain_mask = readnii(brain_mask_path)
+      }
+
+    # HD-BET
+    } else if (argv$stype == "hdbet") {
+
+      needs_hdbet = ('t1_brain'   %in% names(missing_files_skullstripping)) ||
+                    ('brain_mask' %in% names(missing_files_skullstripping))
+
+      if (needs_hdbet) {
+        t1_input = paste0(bias.out.dir, "/T1_n4.nii.gz")
+
+        if (!file.exists(t1_input)) {
+          stop("Bias-corrected T1 not found at: ", t1_input,
+              "\nEnsure --n4 TRUE is set so bias correction runs before skull stripping.")
+        }
+
+        message("Running HD-BET skull stripping on bias-corrected T1...")
+        ret = system(paste("hd-bet",
+                    "-i", t1_input,
+                    "-o", t1_brain_path,
+                    "-device cpu --disable_tta --save_bet_mask"))
+        if (ret != 0) stop("HD-BET exited with non-zero status: ", ret)
+
+        # HD-BET writes the mask as <output>_bet.nii.gz; rename to match PennSIVE_neuro_pip brainmask naming convention
+        hdbet_mask_raw = sub("\\.nii\\.gz$", "_bet.nii.gz", t1_brain_path)
+        if (file.exists(hdbet_mask_raw) && !file.exists(brain_mask_path)) {
+          file.rename(hdbet_mask_raw, brain_mask_path)
+        }
+
+        if (!file.exists(paste0(bias.out.dir, "/T1_brain_n4.nii.gz"))) {
+          writenii(readnii(t1_brain_path), paste0(bias.out.dir, "/T1_brain_n4.nii.gz"))
+        }
+      }
+
+      t1_brain = readnii(t1_brain_path)
+      brain_mask       = readnii(brain_mask_path)
+
+    } else {
+      stop("Unknown --stype '", argv$stype, "'. Use 'fslbet' or 'hdbet'.")
+    }
+  }
+
+  message('Finished skullstripping')
+
+
 
   # Registration to FLAIR Space
   reg.out.dir = paste0(main_path, "/data/", p, "/", ses, "/registration/FLAIR_space")
   if (argv$registration){
+    message('Starting registration...')
     # only create directory if it doesn't already exist - EAH 5/7/26
     if (!dir.exists(reg.out.dir)) {
       dir.create(reg.out.dir,showWarnings = FALSE, recursive = TRUE)
@@ -226,7 +292,7 @@ if (argv$step == "preparation"){
     }
 
     if ('t1_reg' %in% names(missing_files_reg_flair)) {
-      t1_reg = ants2oro(antsApplyTransforms(fixed = oro2ants(flair_biascorrect), moving = oro2ants(t1_fslbet_robust),
+      t1_reg = ants2oro(antsApplyTransforms(fixed = oro2ants(flair_biascorrect), moving = oro2ants(t1_brain),
                                           transformlist = t1_to_flair$fwdtransforms, interpolator = "welchWindowedSinc"))
       writenii(t1_reg, paste0(reg.out.dir,"/t1_n4_brain_reg_flair"))}
     else {
@@ -276,9 +342,12 @@ if (argv$step == "preparation"){
     }
   }
 
+  message('Finished registration')
+
   # WhiteStripe normalize data
   white.out.dir = paste0(main_path, "/data/", p, "/", ses, "/whitestripe/FLAIR_space")
   if(argv$whitestripe){
+    message('Starting whitestripe...')
     # only create directory if it doesn't already exist - EAH 5/7/26
     if (!dir.exists(white.out.dir)) {
       dir.create(white.out.dir,showWarnings = FALSE, recursive = TRUE)
@@ -331,9 +400,12 @@ if (argv$step == "preparation"){
       flair_n4_brain_ws = readnii(paste0(white.out.dir, "/flair_n4_brain_ws"))
     }
 
+    message('Finished whitestripe')
+
   # Mimosa
   mim.out.dir = paste0(main_path, "/data/", p, "/", ses, "/mimosa")
   if(argv$mimosa){
+    message('Starting MIMoSA...')
     # only create directory if it doesn't already exist - EAH 5/7/26
     if (!dir.exists(mim.out.dir)) {
       dir.create(mim.out.dir,showWarnings = FALSE)
@@ -367,6 +439,8 @@ if (argv$step == "preparation"){
   }else{
     probmap = readnii(paste0(mim.out.dir,"/mimosa_prob"))
   }
+
+  message('Finished MIMoSA')
 
   # Register to EPI Space
   reg.epi.out.dir = paste0(main_path, "/data/", p, "/", ses, "/registration/EPI_space")
@@ -569,25 +643,21 @@ if (argv$step == "preparation"){
     preds = read.csv(preds_path)
   }
 }else if(argv$step == "consolidation"){
-  prl_files = list.files(paste0(main_path, "/data"), pattern = "*_preds.csv", recursive = TRUE, full.names = TRUE) 
-  # parse out and save sub-XXX and ses-YY information in separate columns - BT 6/16/26
-  prl_con = lapply(prl_files, function(x){
-    sub_file = read_csv(x)
-
-    subj = str_extract(x, "sub-[0-9]+")
-    ses  = str_extract(x, "ses-[0-9]+")
-
-    sub_file = sub_file %>% mutate(subject = subj,
-                                  session = ses)
-  }) %>% bind_rows()
-
-  colnames(prl_con) = c("lesion_id", "rim_neg", "rim_pos", "subject", "session")
-
   if(!file.exists(paste0(main_path, "/stats"))){
     dir.create(paste0(main_path, "/stats"))
   }
-
-  write_csv(prl_con, paste0(main_path, "/stats/prl_probability.csv"))
+  
+  # only write file if it doesn't already exist - EAH 5/7/26
+  if(!file.exists(paste0(main_path, "/stats/prl_probability.csv"))){
+    prl_files = list.files(paste0(main_path, "/data"), pattern = "*_preds.csv", recursive = TRUE, full.names = TRUE) 
+    prl_con = lapply(prl_files, function(x){
+      sub_file = read_csv(x)
+      subj = str_split(x, "/")[[1]][length(str_split(x, "/")[[1]]) - 2]
+      sub_file = sub_file %>% mutate(subject = subj)
+    }) %>% bind_rows()
+    colnames(prl_con) = c("lesion_id", "rim_neg", "rim_pos", "subject")
+    write_csv(prl_con, paste0(main_path, "/stats/prl_probability.csv"))
+  }
 }
 
 
