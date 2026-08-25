@@ -22,7 +22,7 @@ show_help() {
   echo "  --step   Specify the step of pipeline. estimation or consolidation. Default is estimation"
   echo "  --mode   Specify whether to run the pipeline individually or in a batch: individual or batch. Default is batch"
   echo "  -c, --container   Specify the container to use: singularity, docker, local, cluster. Default is cluster"
-  echo "  --sinpath   Specify the path to the singularity image if a singularity container is used. A default path is provided: /project/singularity_images/pennsive_amd64_cputorch.sif"
+  echo "  --sinpath   Specify the path to the singularity image if a singularity container is used. A default path is provided: /project/singularity_images/pennsive_amd64_cputorch_2026-07-23.sif"
   echo "  --dockerpath   Specify the path to the docker image if a docker container is used. A default path is provided: russellshinohara/pennsive_amd64_cputorch"
   echo "  --toolpath   Specify the path to the saved pipeline folder, eg: /path/to/folder"
 }
@@ -52,7 +52,7 @@ csf=TRUE
 step=estimation
 mode=batch
 c=cluster
-sin_path="/project/singularity_images/pennsive_amd64_cputorch.sif"
+sin_path="/project/singularity_images/pennsive_amd64_cputorch_2026-07-23.sif"
 tool_path=""
 docker_path=russellshinohara/pennsive_amd64_cputorch
 

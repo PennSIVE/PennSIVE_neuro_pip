@@ -33,7 +33,7 @@ bash /path/to/PennSIVE_neuro_pip/pipelines/cvs/code/bash/cvs.sh -m /path/to/proj
 
 -   `singularity` 
 ```bash
-singularity pull -F $sin_path docker://pennsive/neuror
+singularity pull -F $sin_path docker://russellshinohara/pennsive_amd64_cputorch
 ```
 ```bash
 bash /path/to/PennSIVE_neuro_pip/pipelines/cvs/code/bash/cvs.sh -m /path/to/project -p sub-001 --ses ses-01 -t "*_T1w.nii.gz" -f "*_FLAIR.nii.gz" -e "*_T2star.nii.gz" -s TRUE --mode individual -c "singularity" --toolpath /path/to/PennSIVE_neuro_pip --sinpath $sin_path
@@ -42,7 +42,7 @@ bash /path/to/PennSIVE_neuro_pip/pipelines/cvs/code/bash/cvs.sh -m /path/to/proj
 -   `docker`
 
 ```bash
-docker pull pennsive/neuror
+docker pull russellshinohara/pennsive_amd64_cputorch
 ```
 
 ```bash
